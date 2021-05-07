@@ -51,7 +51,7 @@ class User
     private $work;
 
     /**
-     * @ORM\OneToMany(targetEntity=planning::class, mappedBy="user")
+     * @ORM\OneToMany(targetEntity=planning::class, mappedBy="user", cascade={"remove", "persist"})
      */
     private $planning;
 
