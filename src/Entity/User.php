@@ -36,9 +36,9 @@ class User
     private $birthday;
 
     /**
-     * @ORM\Column(type="integer")
+     * @ORM\Column(type="string", length=255, nullable=true)
      */
-    private $num;
+    private $phoneNumber;
 
     /**
      * @ORM\Column(type="string", length=255, nullable=true)
@@ -101,14 +101,14 @@ class User
         return $this;
     }
 
-    public function getNum(): ?int
+    public function getPhoneNumber(): ?string
     {
-        return $this->num;
+        return $this->phoneNumber;
     }
 
-    public function setNum(int $num): self
+    public function setPhoneNumber(?string $phoneNumber): self
     {
-        $this->num = $num;
+        $this->phoneNumber = $phoneNumber;
 
         return $this;
     }

@@ -30,7 +30,7 @@ class Task
     /**
      * @ORM\Column(type="date", nullable=true)
      */
-    private $doneDate;
+    private $doneLimitDate;
 
     /**
      * @ORM\ManyToOne(targetEntity=Planning::class, inversedBy="task")
@@ -66,14 +66,14 @@ class Task
         return $this;
     }
 
-    public function getDoneDate(): ?\DateTimeInterface
+    public function getDoneLimitDate(): ?\DateTimeInterface
     {
-        return $this->doneDate;
+        return $this->doneLimitDate;
     }
 
-    public function setDoneDate(?\DateTimeInterface $doneDate): self
+    public function setDoneLimitDate(?\DateTimeInterface $doneLimitDate): self
     {
-        $this->doneDate = $doneDate;
+        $this->doneLimitDate = $doneLimitDate;
 
         return $this;
     }

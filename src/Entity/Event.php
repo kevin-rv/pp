@@ -35,7 +35,7 @@ class Event
     /**
      * @ORM\Column(type="datetime")
      */
-    private $enDatetime;
+    private $endDatetime;
 
     /**
      * @ORM\ManyToOne(targetEntity=Planning::class, inversedBy="event")
@@ -85,14 +85,14 @@ class Event
         return $this;
     }
 
-    public function getEnDatetime(): ?\DateTimeInterface
+    public function getEndDatetime(): ?\DateTimeInterface
     {
-        return $this->enDatetime;
+        return $this->endDatetime;
     }
 
-    public function setEnDatetime(\DateTimeInterface $enDatetime): self
+    public function setEndDatetime(\DateTimeInterface $endDatetime): self
     {
-        $this->enDatetime = $enDatetime;
+        $this->endDatetime = $endDatetime;
 
         return $this;
     }
