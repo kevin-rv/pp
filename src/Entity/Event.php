@@ -3,6 +3,8 @@
 namespace App\Entity;
 
 use App\Repository\EventRepository;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 
 /**
@@ -41,6 +43,16 @@ class Event
      * @ORM\ManyToOne(targetEntity=Planning::class, inversedBy="event")
      */
     private $planning;
+
+    /**
+     * @ORM\ManyToMany(targetEntity=Contact::class, mappedBy="event")
+     */
+    private $contacts;
+
+    public function __construct()
+    {
+        $this->contacts = new ArrayCollection();
+    }
 
 
 
@@ -105,6 +117,33 @@ class Event
     public function setPlanning(?Planning $planning): self
     {
         $this->planning = $planning;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection|Contact[]
+     */
+    public function getContacts(): Collection
+    {
+        return $this->contacts;
+    }
+
+    public function addContact(Contact $contact): self
+    {
+        if (!$this->contacts->contains($contact)) {
+            $this->contacts[] = $contact;
+            $contact->addEvent($this);
+        }
+
+        return $this;
+    }
+
+    public function removeContact(Contact $contact): self
+    {
+        if ($this->contacts->removeElement($contact)) {
+            $contact->removeEvent($this);
+        }
 
         return $this;
     }

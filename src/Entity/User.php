@@ -55,9 +55,20 @@ class User
      */
     private $planning;
 
+    /**
+     * @ORM\Column(type="string", length=255)
+     */
+    private $name;
+
+    /**
+     * @ORM\OneToMany(targetEntity=contact::class, mappedBy="user")
+     */
+    private $contact;
+
     public function __construct()
     {
         $this->planning = new ArrayCollection();
+        $this->contact = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -161,6 +172,48 @@ class User
             // set the owning side to null (unless already changed)
             if ($planning->getUser() === $this) {
                 $planning->setUser(null);
+            }
+        }
+
+        return $this;
+    }
+
+    public function getName(): ?string
+    {
+        return $this->name;
+    }
+
+    public function setName(string $name): self
+    {
+        $this->name = $name;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection|contact[]
+     */
+    public function getContact(): Collection
+    {
+        return $this->contact;
+    }
+
+    public function addContact(contact $contact): self
+    {
+        if (!$this->contact->contains($contact)) {
+            $this->contact[] = $contact;
+            $contact->setUser($this);
+        }
+
+        return $this;
+    }
+
+    public function removeContact(contact $contact): self
+    {
+        if ($this->contact->removeElement($contact)) {
+            // set the owning side to null (unless already changed)
+            if ($contact->getUser() === $this) {
+                $contact->setUser(null);
             }
         }
 
