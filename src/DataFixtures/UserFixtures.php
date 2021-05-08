@@ -24,6 +24,7 @@ class UserFixtures extends Fixture
     {
         for ($i = 0; $i < 50; $i++) {
             $user = new User();
+            $user->setName($this->faker->word);
             $user->setBirthday($this->faker->dateTime('-18 years'));
             $user->setEmail('email_'.$i.'@email.com');
             $user->setHome($this->faker->address);
