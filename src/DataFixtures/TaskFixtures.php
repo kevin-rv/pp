@@ -1,13 +1,14 @@
 <?php
 
 namespace App\DataFixtures;
-
+use App\Entity\Task;
 use Doctrine\Bundle\FixturesBundle\Fixture;
+use Doctrine\Common\DataFixtures\DependentFixtureInterface;
 use Doctrine\Persistence\ObjectManager;
 use Faker\Factory;
 use Faker\Generator;
 
-class TaskFixtures extends Fixture
+class TaskFixtures extends Fixture implements DependentFixtureInterface
 {
     /**
      * @var Generator
@@ -19,14 +20,23 @@ class TaskFixtures extends Fixture
         $this->faker = Factory::create('fr_FR');
     }
     public function load(ObjectManager $manager)
-    {
-        $task = new Task();
-        $task->setShortDescription($this->faker->text);
-        $task->setDone($this->faker->date(20210803));
-        $task->setDone_limite_date($this->faker->dateTime);
-        // $product = new Product();
-        // $manager->persist($product);
+    { // 10 tache par planning
+        for ($i = 0; $i < 1000; $i++) {
+            $task = new Task();
+            $task->setShortDescription($this->faker->text);
+            $task->setDone($this->faker->dateTime);
+            $task->setDoneLimitDate($this->faker->dateTime);
+            $task->setPlanning($this->getReference('planning_'.$i));
 
+            $manager->persist($task);
+        }
         $manager->flush();
     }
-}
+
+    public function getDependencies()
+    {
+        return [
+            PlanningFixtures::class,
+        ];
+    }
+} // TODO implémenter au planning
