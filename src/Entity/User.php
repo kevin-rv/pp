@@ -51,9 +51,9 @@ class User
     private $work;
 
     /**
-     * @ORM\OneToMany(targetEntity=planning::class, mappedBy="user", cascade={"remove", "persist"})
+     * @ORM\OneToMany(targetEntity=Planning::class, mappedBy="user", cascade={"remove", "persist"})
      */
-    private $planning;
+    private $plannings;
 
     /**
      * @ORM\Column(type="string", length=255)
@@ -61,14 +61,14 @@ class User
     private $name;
 
     /**
-     * @ORM\OneToMany(targetEntity=contact::class, mappedBy="user")
+     * @ORM\OneToMany(targetEntity=Contact::class, mappedBy="user")
      */
-    private $contact;
+    private $contacts;
 
     public function __construct()
     {
-        $this->planning = new ArrayCollection();
-        $this->contact = new ArrayCollection();
+        $this->plannings = new ArrayCollection();
+        $this->contacts = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -149,26 +149,26 @@ class User
     }
 
     /**
-     * @return Collection|planning[]
+     * @return Collection|Planning[]
      */
-    public function getPlanning(): Collection
+    public function getPlannings(): Collection
     {
-        return $this->planning;
+        return $this->plannings;
     }
 
-    public function addPlanning(planning $planning): self
+    public function addPlanning(Planning $planning): self
     {
-        if (!$this->planning->contains($planning)) {
-            $this->planning[] = $planning;
+        if (!$this->plannings->contains($planning)) {
+            $this->plannings[] = $planning;
             $planning->setUser($this);
         }
 
         return $this;
     }
 
-    public function removePlanning(planning $planning): self
+    public function removePlanning(Planning $planning): self
     {
-        if ($this->planning->removeElement($planning)) {
+        if ($this->plannings->removeElement($planning)) {
             // set the owning side to null (unless already changed)
             if ($planning->getUser() === $this) {
                 $planning->setUser(null);
@@ -191,26 +191,26 @@ class User
     }
 
     /**
-     * @return Collection|contact[]
+     * @return Collection|Contact[]
      */
-    public function getContact(): Collection
+    public function getContacts(): Collection
     {
-        return $this->contact;
+        return $this->contacts;
     }
 
-    public function addContact(contact $contact): self
+    public function addContact(Contact $contact): self
     {
-        if (!$this->contact->contains($contact)) {
-            $this->contact[] = $contact;
+        if (!$this->contacts->contains($contact)) {
+            $this->contacts[] = $contact;
             $contact->setUser($this);
         }
 
         return $this;
     }
 
-    public function removeContact(contact $contact): self
+    public function removeContact(Contact $contact): self
     {
-        if ($this->contact->removeElement($contact)) {
+        if ($this->contacts->removeElement($contact)) {
             // set the owning side to null (unless already changed)
             if ($contact->getUser() === $this) {
                 $contact->setUser(null);
