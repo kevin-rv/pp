@@ -21,7 +21,7 @@ class User
     private $id;
 
     /**
-     * @ORM\Column(type="string", length=254)
+     * @ORM\Column(type="string", length=320)
      */
     private $email;
 
@@ -36,12 +36,12 @@ class User
     private $birthday;
 
     /**
-     * @ORM\Column(type="string", length=255, nullable=true)
+     * @ORM\Column(type="string", length=20, nullable=true)
      */
     private $phoneNumber;
 
     /**
-     * @ORM\Column(type="string", length=255, nullable=true)
+     * @ORM\Column(type="string", length=266, nullable=true)
      */
     private $home;
 

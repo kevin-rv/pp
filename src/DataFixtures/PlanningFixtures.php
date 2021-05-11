@@ -32,6 +32,8 @@ class PlanningFixtures extends Fixture implements DependentFixtureInterface
                 $j = 0;
             }
 
+            $this->setReference('planning_'.$i, $planning);
+
             $manager->persist($planning);
         }
 

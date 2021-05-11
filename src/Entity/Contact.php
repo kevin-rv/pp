@@ -25,12 +25,12 @@ class Contact
     private $name;
 
     /**
-     * @ORM\Column(type="string", length=255, nullable=true)
+     * @ORM\Column(type="string", length=20, nullable=true)
      */
     private $phoneNumber;
 
     /**
-     * @ORM\Column(type="string", length=255, nullable=true)
+     * @ORM\Column(type="string", length=266, nullable=true)
      */
     private $home;
 
@@ -40,7 +40,7 @@ class Contact
     private $birthday;
 
     /**
-     * @ORM\Column(type="string", length=255, nullable=true)
+     * @ORM\Column(type="string", length=320, nullable=true)
      */
     private $email;
 

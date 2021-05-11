@@ -1,7 +1,6 @@
 <?php
 
 namespace App\DataFixtures;
-use App\Entity\Contact;
 use App\Entity\Event;
 use Doctrine\Bundle\FixturesBundle\Fixture;
 use Doctrine\Common\DataFixtures\DependentFixtureInterface;
@@ -20,16 +19,25 @@ class EventFixtures extends Fixture implements  DependentFixtureInterface
     {
         $this->faker = Factory::create('fr_FR');
     }
+
     public function load(ObjectManager $manager)
-    { 
-        for ($i = 0; $i < 1000; $i++) {
+    {
+        for ($i = $j = $k = 0; $i < 1000; $i++) {
             $event = new Event();
-            $event->setShortDescription($this->faker->text);
+            $event->setShortDescription($this->faker->text(45));
             $event->setFullDescription($this->faker->realText());
             $event->setStartDatetime($this->faker->dateTime);
             $event->setEndDatetime($this->faker->dateTime);
-            $event->setPlanning($this->getReference('planning_'.$i));
-            $event->setContact($this->getReference('contact_'.$i));
+            $event->setPlanning($this->getReference('planning_'.$j));
+            $event->addContact($this->getReference('contact_'.$k));
+            $j++;
+            if ($j === 100) {
+                $j = 0;
+            }
+            $k++;
+            if ($k === 500) {
+                $k = 0;
+            }
 
  // table intermédiaire ?
             $manager->persist($event);
@@ -41,7 +49,7 @@ class EventFixtures extends Fixture implements  DependentFixtureInterface
     {
         return [
             PlanningFixtures::class,
-            Contact::class,
+            ContactFixtures::class,
         ];
     }
 } // TODO implémenter planning et contact

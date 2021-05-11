@@ -21,7 +21,7 @@ class ContactFixtures extends Fixture implements DependentFixtureInterface
     }
     public function load(ObjectManager $manager)
     { //10 contact par utilisateur
-        for ($i = 0; $i < 500; $i++) {
+        for ($i = $j = 0; $i < 500; $i++) {
             $contact = new Contact();
             $contact->setName($this->faker->word);
             $contact->setPhoneNumber($this->faker->phoneNumber);
@@ -30,9 +30,14 @@ class ContactFixtures extends Fixture implements DependentFixtureInterface
             $contact->setEmail($this->faker->email);
             $contact->setRelationship($this->faker->word);
             $contact->setWork($this->faker->jobTitle);
-            $contact->setUser($this->getReference('user_'.$i));
-            $contact->setEvent($this->getReference('event_'.$i));
-// Table intermédiaire ?
+            $contact->setUser($this->getReference('user_'.$j));
+            $j++;
+            if ($j === 50) {
+                $j = 0;
+            }
+
+            $this->setReference('contact_'.$i, $contact);
+
             $manager->persist($contact);
         }
         $manager->flush();
@@ -42,7 +47,6 @@ class ContactFixtures extends Fixture implements DependentFixtureInterface
     {
         return [
             UserFixtures::class,
-            EventFixtures::class,
         ];
     }
 } // TODO implémenter contact utilisateur et evenement
