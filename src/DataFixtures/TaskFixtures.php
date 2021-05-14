@@ -1,6 +1,7 @@
 <?php
 
 namespace App\DataFixtures;
+
 use App\Entity\Task;
 use Doctrine\Bundle\FixturesBundle\Fixture;
 use Doctrine\Common\DataFixtures\DependentFixtureInterface;
@@ -22,13 +23,13 @@ class TaskFixtures extends Fixture implements DependentFixtureInterface
 
     public function load(ObjectManager $manager)
     { // 10 tache par planning
-        for ($i = $j = 0; $i < 1000; $i++) {
+        for ($i = $j = 0; $i < 1000; ++$i) {
             $task = new Task();
             $task->setShortDescription($this->faker->text(45));
             $task->setDone($this->faker->dateTime);
             $task->setDoneLimitDate($this->faker->dateTime);
             $task->setPlanning($this->getReference('planning_'.$j));
-            if ($j === 100) {
+            if (100 === $j) {
                 $j = 0;
             }
 

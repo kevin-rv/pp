@@ -3,17 +3,13 @@
 namespace App\Controller;
 
 use App\Repository\PlanningRepository;
-use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
-use Symfony\Component\Serializer\Encoder\JsonEncoder;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
-use Symfony\Component\Serializer\Normalizer\ObjectNormalizer;
-use Symfony\Component\Serializer\Serializer;
 use Symfony\Component\Serializer\SerializerInterface;
 
 /**
- * HTTP Verb	CRUD	Entire Collection (e.g. /customers)	Specific Item (e.g. /customers/{id})
+ * HTTP Verb	CRUD	Entire Collection (e.g. /customers)	Specific Item (e.g. /customers/{id}).
  *
  * POST
  * Create	201 (Created), 'Location' header with link to /customers/{id} containing new ID.
@@ -33,9 +29,7 @@ use Symfony\Component\Serializer\SerializerInterface;
  * DELETE	Delete	405 (Method Not Allowed), unless you want to delete the whole collection—not often desirable.
  * 200 (OK). 404 (Not Found), if ID not found or invalid.
  */
-
-
-class PlanningController extends AbstractController
+class PlanningController extends BaseController
 {
     /**
      * @Route("/planning", name="planning_list", methods={"GET"})

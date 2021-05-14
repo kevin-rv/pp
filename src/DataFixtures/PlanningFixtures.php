@@ -23,12 +23,12 @@ class PlanningFixtures extends Fixture implements DependentFixtureInterface
 
     public function load(ObjectManager $manager)
     {
-        for ($i = $j = 0; $i < 100; $i++) {
+        for ($i = $j = 0; $i < 100; ++$i) {
             $planning = new Planning();
             $planning->setName($this->faker->word);
             $planning->setUser($this->getReference('user_'.$j));
-            $j++;
-            if ($j === 50) {
+            ++$j;
+            if (50 === $j) {
                 $j = 0;
             }
 
