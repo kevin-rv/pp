@@ -2,9 +2,17 @@
 
 namespace App\Controller;
 
+use App\Entity\Planning;
+use App\Entity\User;
 use App\Repository\PlanningRepository;
+use Doctrine\ORM\EntityManager;
+use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Serializer\Exception\ExceptionInterface;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 use Symfony\Component\Serializer\SerializerInterface;
 
@@ -32,19 +40,27 @@ use Symfony\Component\Serializer\SerializerInterface;
 class PlanningController extends BaseController
 {
     /**
+     * @var SerializerInterface
+     */
+    private $serializer;
+    /**
+     * @var PlanningRepository
+     */
+    private $planningRepository;
+
+    public function __construct(RequestStack $requestStack, SerializerInterface $serializer, PlanningRepository $planningRepository)
+    {
+        parent::__construct($requestStack);
+        $this->serializer = $serializer;
+        $this->planningRepository = $planningRepository;
+    }
+
+    /**
      * @Route("/planning", name="planning_list", methods={"GET"})
      */
-    public function getAllPlanning(PlanningRepository $planningRepository, SerializerInterface $serializer): Response
+    public function getAllPlanning(): Response
     {
-        // récupérer tous les plannings et les renvoyer à l'utilisateur
-
-        $plannings = $planningRepository->findAll();
-
-        return $this->json($serializer->normalize(
-            $plannings,
-            'json',
-            [AbstractNormalizer::IGNORED_ATTRIBUTES => ['events', 'tasks', 'user']]
-        ));
+        return $this->prepareJsonResponse($this->planningRepository->findBy(['user'=> $this->getUser()]));
     }
 
     /**
@@ -52,50 +68,87 @@ class PlanningController extends BaseController
      */
     public function getOnePlanning(int $planningId): Response
     {
-        // récupérer es plannings et le renvoyer
+        $planning = $this->planningRepository->findOneBy(['user'=> $this->getUser(), 'id' => $planningId]);
 
-        return $this->json([
-            'message' => 'Welcome to your new controller!',
-            'path' => 'src/Controller/PlanningController.php',
-        ]);
+        if ($planning === null) {
+            return $this->json(['error' => 'Not Found'], 404);
+        }
+
+        return $this->prepareJsonResponse([$planning]);
     }
 
     /**
      * @Route("/planning", name="planning_create", methods={"POST"})
      */
-    public function createPlanning(): Response
+    public function createPlanning(EntityManagerInterface $entityManager, Request $request): Response
     {
-        // créer un planning et le retourner
+        $planning = new Planning();
+        try {
+            $planning->update($request->request->all());
+            $planning->setUser($this->getUser());
 
-        return $this->json([
-            'message' => 'Welcome to your new controller!',
-            'path' => 'src/Controller/PlanningController.php',
-        ]);
+            $searchedPlanning = $this->planningRepository->findOneBy([
+                'name' => $planning->getName(),
+                'user' => $planning->getUser(),
+            ]);
+
+            if ($searchedPlanning) {
+                return $this->json(['error' => 'name already exist'], 400);
+            }
+        } catch (\Throwable $exception) {
+            return $this->json(['error' => $exception->getMessage()], 400);
+        }
+
+        $entityManager->persist($planning);
+        $entityManager->flush();
+
+        return $this->prepareJsonResponse([$planning]);
     }
 
     /**
      * @Route("/planning/{planningId}", name="planning_update", methods={"PATCH"})
      */
-    public function updatePlanning(int $planningId): Response
+    public function updatePlanning(int $planningId, EntityManagerInterface $entityManager, Request $request): Response
     {
-        // updater le planning et le retourner
+        $planning = $this->planningRepository->findOneBy(['user'=> $this->getUser(), 'id' => $planningId]);
 
-        return $this->json([
-            'message' => 'Welcome to your new controller!',
-            'path' => 'src/Controller/PlanningController.php',
-        ]);
+        if ($planning === null) {
+            return $this->json(['error' => 'Not Found'], 404);
+        }
+
+        $planning->update($request->request->all());
+        $entityManager->persist($planning);
+        $entityManager->flush();
+
+        return $this->prepareJsonResponse([$planning]);
     }
 
     /**
      * @Route("/planning/{planningId}", name="planning_delete", methods={"DELETE"})
      */
-    public function deletePlanning(int $planningId): Response
+    public function deletePlanning(int $planningId, EntityManagerInterface $entityManager): Response
     {
-        // supprimer le planning et confirmer la suppression
+        $planning = $this->planningRepository->findOneBy(['user'=> $this->getUser(), 'id' => $planningId]);
 
-        return $this->json([
-            'message' => 'Welcome to your new controller!',
-            'path' => 'src/Controller/PlanningController.php',
-        ]);
+        if ($planning === null) {
+            return $this->json(['error' => 'Not Found'], 404);
+        }
+
+        $entityManager->remove($planning);
+        $entityManager->flush();
+
+        return $this->prepareJsonResponse([$planning]);
+    }
+
+    /**
+     * @param Planning[] $plannings
+     */
+    public function prepareJsonResponse(array $plannings): JsonResponse
+    {
+        return $this->json($this->serializer->normalize(
+            $plannings,
+            null,
+            [AbstractNormalizer::IGNORED_ATTRIBUTES => ['events', 'tasks', 'user']]
+        ));
     }
 }

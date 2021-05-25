@@ -2,10 +2,14 @@
 
 namespace App\Entity;
 
+use App\Error\UnexpectedDataException;
 use App\Repository\UserRepository;
+use DateTime;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use Exception;
+use http\Exception\UnexpectedValueException;
 
 /**
  * @ORM\Entity(repositoryClass=UserRepository::class)
@@ -13,6 +17,16 @@ use Doctrine\ORM\Mapping as ORM;
  */
 class User
 {
+    public const FIELDS_MAP = [
+        'email',
+        'password',
+        'birthday',
+        'home',
+        'work',
+        'phoneNumber',
+        'name',
+    ];
+
     /**
      * @ORM\Id
      * @ORM\GeneratedValue
@@ -21,7 +35,7 @@ class User
     private $id;
 
     /**
-     * @ORM\Column(type="string", length=320)
+     * @ORM\Column(type="string", length=320, unique=true)
      */
     private $email;
 
@@ -61,7 +75,7 @@ class User
     private $name;
 
     /**
-     * @ORM\OneToMany(targetEntity=Contact::class, mappedBy="user")
+     * @ORM\OneToMany(targetEntity=Contact::class, mappedBy="user", cascade={"remove", "persist"})
      */
     private $contacts;
 
@@ -83,6 +97,10 @@ class User
 
     public function setEmail(string $email): self
     {
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            throw new UnexpectedDataException('email MUST to be a valid email');
+        }
+
         $this->email = $email;
 
         return $this;
@@ -124,6 +142,10 @@ class User
 
     public function setPhoneNumber(?string $phoneNumber): self
     {
+        if (!preg_match('#^(\+\d{1,4}\s*)?(\(\d{1,5}\))?(\s*\d{1,2}){1,6}$#', $phoneNumber)) {
+            throw new UnexpectedDataException('phone number MUST match regex format: ^(\+\d{1,4}\s*)?(\(\d{1,5}\))?(\s*\d{1,2}){1,6}$');
+        }
+
         $this->phoneNumber = $phoneNumber;
 
         return $this;
@@ -220,6 +242,27 @@ class User
             if ($contact->getUser() === $this) {
                 $contact->setUser(null);
             }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @throws Exception
+     */
+    public function update(array $payload): self
+    {
+        foreach ($payload as $key => $value) {
+            if (!in_array($key, self::FIELDS_MAP)) {
+                continue;
+            }
+            if ($key === 'birthday') {
+                if (!preg_match('#^\d{4}-\d{2}-\d{2}$#', $value)) {
+                    throw new UnexpectedDataException('birthday MUST to be in format yyyy-mm-dd');
+                }
+                $value = new DateTime($value);
+            }
+            $this->{'set'.ucfirst($key)}($value);
         }
 
         return $this;

@@ -2,16 +2,23 @@
 
 namespace App\Entity;
 
+use App\Error\UnexpectedDataException;
 use App\Repository\PlanningRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use mysql_xdevapi\Exception;
+use function PHPUnit\Framework\throwException;
 
 /**
  * @ORM\Entity(repositoryClass=PlanningRepository::class)
  */
 class Planning
 {
+    const FIELDS_MAP = [
+        'name',
+    ];
+
     /**
      * @ORM\Id
      * @ORM\GeneratedValue
@@ -25,12 +32,12 @@ class Planning
     private $name;
 
     /**
-     * @ORM\OneToMany(targetEntity=Event::class, mappedBy="planning")
+     * @ORM\OneToMany(targetEntity=Event::class, mappedBy="planning", cascade={"remove", "persist"})
      */
     private $events;
 
     /**
-     * @ORM\OneToMany(targetEntity=Task::class, mappedBy="planning")
+     * @ORM\OneToMany(targetEntity=Task::class, mappedBy="planning", cascade={"remove", "persist"})
      */
     private $tasks;
 
@@ -58,6 +65,9 @@ class Planning
 
     public function setName(string $name): self
     {
+        if ($name === '') {
+            throw new UnexpectedDataException('name MUST NOT be empty');
+        }
         $this->name = $name;
 
         return $this;
@@ -131,6 +141,19 @@ class Planning
     public function setUser(User $user): self
     {
         $this->user = $user;
+
+        return $this;
+    }
+
+
+    public function update(array $payload): self
+    {
+        foreach ($payload as $key => $value) {
+            if (!in_array($key, self::FIELDS_MAP)) {
+                continue;
+            }
+            $this->{'set'.ucfirst($key)}($value);
+        }
 
         return $this;
     }
