@@ -7,15 +7,13 @@ use App\Repository\PlanningRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
-use mysql_xdevapi\Exception;
-use function PHPUnit\Framework\throwException;
 
 /**
  * @ORM\Entity(repositoryClass=PlanningRepository::class)
  */
 class Planning
 {
-    const FIELDS_MAP = [
+    public const FIELDS_MAP = [
         'name',
     ];
 
@@ -42,7 +40,7 @@ class Planning
     private $tasks;
 
     /**
-     * @ORM\ManyToOne(targetEntity=User::class, inversedBy="planning", cascade={"remove", "persist"})
+     * @ORM\ManyToOne(targetEntity=User::class, inversedBy="plannings")
      * @ORM\JoinColumn(nullable=false)
      */
     private $user;
@@ -65,7 +63,7 @@ class Planning
 
     public function setName(string $name): self
     {
-        if ($name === '') {
+        if ('' === $name) {
             throw new UnexpectedDataException('name MUST NOT be empty');
         }
         $this->name = $name;
@@ -133,19 +131,6 @@ class Planning
         return $this;
     }
 
-    public function getUser(): ?User
-    {
-        return $this->user;
-    }
-
-    public function setUser(User $user): self
-    {
-        $this->user = $user;
-
-        return $this;
-    }
-
-
     public function update(array $payload): self
     {
         foreach ($payload as $key => $value) {
@@ -154,6 +139,18 @@ class Planning
             }
             $this->{'set'.ucfirst($key)}($value);
         }
+
+        return $this;
+    }
+
+    public function getUser(): ?User
+    {
+        return $this->user;
+    }
+
+    public function setUser(?User $user): self
+    {
+        $this->user = $user;
 
         return $this;
     }

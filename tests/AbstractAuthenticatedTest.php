@@ -1,6 +1,5 @@
 <?php
 
-
 namespace App\Tests;
 
 use Faker\Factory;
@@ -19,7 +18,8 @@ abstract class AbstractAuthenticatedTest extends WebTestCase
     /**
      * @var Generator
      */
-    private static $faker;
+    protected static $faker;
+
     /**
      * @var KernelBrowser
      */
@@ -28,14 +28,13 @@ abstract class AbstractAuthenticatedTest extends WebTestCase
     public function setUp(): void
     {
         $this->client = static::createClient();
+        self::$faker = Factory::create('fr_FR');
 
         if (self::$token) {
             return;
         }
 
-        self::$faker = Factory::create('fr_FR');
-
-        $email =  self::$faker->email;
+        $email = self::$faker->email;
         $password = 'password';
 
         $this->client->request('POST', '/user', [

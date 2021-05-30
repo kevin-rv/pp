@@ -31,8 +31,8 @@ class UserTest extends WebTestCase
                     'birthday' => $this->faker->date(),
                     'name' => $this->faker->name,
                     'phoneNumber' => $this->faker->phoneNumber,
-                ]
-            ]
+                ],
+            ],
         ];
     }
 
@@ -97,7 +97,6 @@ class UserTest extends WebTestCase
         $this->assertArrayHasKey('error', $response);
         $this->assertEquals('phone number MUST match regex format: ^(\+\d{1,4}\s*)?(\(\d{1,5}\))?(\s*\d{1,2}){1,6}$', $response['error']);
     }
-
 
     /**
      * @dataProvider getValidUserData

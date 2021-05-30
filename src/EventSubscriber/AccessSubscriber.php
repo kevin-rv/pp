@@ -2,6 +2,7 @@
 
 namespace App\EventSubscriber;
 
+use App\Entity\User;
 use App\Repository\UserRepository;
 use App\Security\JWT;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
@@ -33,52 +34,14 @@ class AccessSubscriber implements EventSubscriberInterface
 
     public function onKernelRequest(RequestEvent $event)
     {
-        try {
-            $authRequired = true;
-            $authOption = $this->router->getRouteCollection()->get($this->router->match($event->getRequest()->getPathInfo())['_route'])->getOption('auth');
-
-            if (is_bool($authOption)) {
-                $authRequired = $authOption;
-            }
-        } catch (\Throwable $exception) {
-            $authRequired = true;
-        }
-
-        if (!$authRequired) {
+        if (!$this->isAuthRequired($event)) {
             return;
         }
 
-        $authorization = $event->getRequest()->headers->get('Authorization');
+        $token = $this->getJWTToken($event);
+        $user = $this->getValidUserFromToken($token);
 
-        if (!$authorization) {
-            $event->setResponse(new JsonResponse(['error' => 'Unauthorized'], 401));
-
-            return;
-        }
-
-        preg_match('#^Bearer (.+)$#', $authorization, $matches);
-        $token = $matches[1];
-
-        if (!$token) {
-            $event->setResponse(new JsonResponse(['error' => 'Unauthorized'], 401));
-
-            return;
-        }
-
-        try {
-            $jwe = $this->jwt->decryptToken($token);
-            $payload = json_decode($jwe->getPayload(), true);
-            $userId = $payload['user_id'];
-            $userEmail = $payload['user_email'];
-        } catch (\Throwable $exception) {
-            $event->setResponse(new JsonResponse(['error' => 'Unauthorized'], 401));
-
-            return;
-        }
-
-        $user = $this->userRepository->find($userId);
-
-        if (!$user || $user->getEmail() !== $userEmail) {
+        if (!$user) {
             $event->setResponse(new JsonResponse(['error' => 'Unauthorized'], 401));
         }
 
@@ -90,5 +53,56 @@ class AccessSubscriber implements EventSubscriberInterface
         return [
             'kernel.request' => 'onKernelRequest',
         ];
+    }
+
+    private function isAuthRequired(RequestEvent $event): bool
+    {
+        try {
+            $authOption = $this->router->getRouteCollection()->get($this->router->match($event->getRequest()->getPathInfo())['_route'])->getOption('auth');
+
+            if (is_bool($authOption)) {
+                return $authOption;
+            }
+        } catch (\Throwable $exception) {
+            return true; // If anything goes wrong require authoring
+        }
+
+        return true; // Default is require authoring
+    }
+
+    private function getJWTToken(RequestEvent $event): ?string
+    {
+        $authorization = $event->getRequest()->headers->get('Authorization');
+
+        if (!$authorization) {
+            return null;
+        }
+
+        preg_match('#^Bearer (.+)$#', $authorization, $matches);
+
+        return $matches[1] ?? null;
+    }
+
+    private function getValidUserFromToken(?string $token): ?User
+    {
+        if (!$token) {
+            return null;
+        }
+
+        try {
+            $jwe = $this->jwt->decryptToken($token);
+            $payload = json_decode($jwe->getPayload(), true);
+            $userId = $payload['user_id'];
+            $userEmail = $payload['user_email'];
+            $user = $this->userRepository->find($userId);
+        } catch (\Throwable $exception) {
+            return null;
+        }
+
+        if ($user && $user->getEmail() === $userEmail) {
+            return $user;
+        }
+
+        return null;
     }
 }

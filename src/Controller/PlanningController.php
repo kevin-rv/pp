@@ -3,16 +3,13 @@
 namespace App\Controller;
 
 use App\Entity\Planning;
-use App\Entity\User;
 use App\Repository\PlanningRepository;
-use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
-use Symfony\Component\Serializer\Exception\ExceptionInterface;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 use Symfony\Component\Serializer\SerializerInterface;
 
@@ -60,7 +57,7 @@ class PlanningController extends BaseController
      */
     public function getAllPlanning(): Response
     {
-        return $this->prepareJsonResponse($this->planningRepository->findBy(['user'=> $this->getUser()]));
+        return $this->prepareJsonResponse($this->planningRepository->findBy(['user' => $this->getUser()]));
     }
 
     /**
@@ -68,9 +65,9 @@ class PlanningController extends BaseController
      */
     public function getOnePlanning(int $planningId): Response
     {
-        $planning = $this->planningRepository->findOneBy(['user'=> $this->getUser(), 'id' => $planningId]);
+        $planning = $this->planningRepository->findOneBy(['user' => $this->getUser(), 'id' => $planningId]);
 
-        if ($planning === null) {
+        if (null === $planning) {
             return $this->json(['error' => 'Not Found'], 404);
         }
 
@@ -110,9 +107,9 @@ class PlanningController extends BaseController
      */
     public function updatePlanning(int $planningId, EntityManagerInterface $entityManager, Request $request): Response
     {
-        $planning = $this->planningRepository->findOneBy(['user'=> $this->getUser(), 'id' => $planningId]);
+        $planning = $this->planningRepository->findOneBy(['user' => $this->getUser(), 'id' => $planningId]);
 
-        if ($planning === null) {
+        if (null === $planning) {
             return $this->json(['error' => 'Not Found'], 404);
         }
 
@@ -128,9 +125,9 @@ class PlanningController extends BaseController
      */
     public function deletePlanning(int $planningId, EntityManagerInterface $entityManager): Response
     {
-        $planning = $this->planningRepository->findOneBy(['user'=> $this->getUser(), 'id' => $planningId]);
+        $planning = $this->planningRepository->findOneBy(['user' => $this->getUser(), 'id' => $planningId]);
 
-        if ($planning === null) {
+        if (null === $planning) {
             return $this->json(['error' => 'Not Found'], 404);
         }
 

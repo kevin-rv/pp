@@ -1,13 +1,17 @@
 <?php
 
-
 namespace App\Tests;
 
 class PlanningTest extends AbstractAuthenticatedTest
-{   //CREATE
+{
+    private function randomPlanningData(): array
+    {
+        return ['name' => self::$faker->words(5, true)];
+    }
+
     public function testCreatePlanningIsSuccessful()
     {
-        $this->clientRequestAuthenticated('POST', '/planning', ['name' => 'planning123']);
+        $this->clientRequestAuthenticated('POST', '/planning', $this->randomPlanningData());
 
         $this->assertResponseIsSuccessful();
     }
@@ -21,46 +25,66 @@ class PlanningTest extends AbstractAuthenticatedTest
 
     public function testCreatePlanningFailIfUserIsNotConnected()
     {
-        $this->client->request('POST', '/planning', ['name' => 'planning123']);
+        $this->client->request('POST', '/planning', $this->randomPlanningData());
 
         $this->assertResponseStatusCodeSame(401);
     }
 
     public function testCreatePlanningWithPlanningNameAlreadyExistMustFailed()
     {
-        $this->clientRequestAuthenticated('POST', '/planning', ['name' => 'randomName']);
+        $planningName = self::$faker->words(3, true);
+
+        $this->clientRequestAuthenticated('POST', '/planning', ['name' => $planningName]);
         $this->assertResponseStatusCodeSame(200);
 
-        $this->clientRequestAuthenticated('POST', '/planning', ['name' => 'randomName']);
+        $this->clientRequestAuthenticated('POST', '/planning', ['name' => $planningName]);
         $this->assertResponseStatusCodeSame(400);
     }
-    // GET
+
     public function testGetOneCreatedPlanningIsSuccessful()
     {
-        $this->clientRequestAuthenticated('POST', '/planning', ['name' => 'my-planning']);
+        $planningName = self::$faker->words(3, true);
+        $this->clientRequestAuthenticated('POST', '/planning', ['name' => $planningName]);
         $this->assertResponseStatusCodeSame(200);
-        $plannings = \Safe\json_decode($this->client->getResponse()->getContent(), true);
+        $plannings = json_decode($this->client->getResponse()->getContent(), true);
 
         $this->clientRequestAuthenticated('GET', '/planning/'.$plannings[0]['id']);
         $this->assertResponseStatusCodeSame(200);
-        $plannings = \Safe\json_decode($this->client->getResponse()->getContent(), true);
+        $plannings = json_decode($this->client->getResponse()->getContent(), true);
 
-        self::assertEquals('my-planning', $plannings[0]['name']);
+        self::assertEquals($planningName, $plannings[0]['name']);
     }
 
     public function testGetAllCreatedPlanningIsSuccessful()
     {
-        $this->clientRequestAuthenticated('POST', '/planning', ['name' => '1']);
+        $planningsName = [
+            self::$faker->words(3, true),
+            self::$faker->words(3, true),
+            self::$faker->words(3, true),
+        ];
+
+        $this->clientRequestAuthenticated('POST', '/planning', ['name' => $planningsName[0]]);
         $this->assertResponseStatusCodeSame(200);
 
-        $this->clientRequestAuthenticated('POST', '/planning', ['name' => '2']);
+        $this->clientRequestAuthenticated('POST', '/planning', ['name' => $planningsName[1]]);
         $this->assertResponseStatusCodeSame(200);
 
-        $this->clientRequestAuthenticated('POST', '/planning', ['name' => '3']);
+        $this->clientRequestAuthenticated('POST', '/planning', ['name' => $planningsName[2]]);
         $this->assertResponseStatusCodeSame(200);
 
         $this->clientRequestAuthenticated('GET', '/planning');
         $this->assertResponseStatusCodeSame(200);
+        $plannings = json_decode($this->client->getResponse()->getContent(), true);
+
+        $planningsNameFromResponse = [];
+
+        foreach ($plannings as $planning) {
+            $planningsNameFromResponse[] = $planning['name'];
+        }
+
+        self::assertContains($planningsName[0], $planningsNameFromResponse);
+        self::assertContains($planningsName[1], $planningsNameFromResponse);
+        self::assertContains($planningsName[2], $planningsNameFromResponse);
     }
 
     public function testGetOneNonexistentPlanningFailed()
@@ -70,119 +94,90 @@ class PlanningTest extends AbstractAuthenticatedTest
         $this->assertResponseStatusCodeSame(404);
     }
 
-    public function testGetOneCreatedPlanningFailUserIsNotConnected() // no
+    public function testGetOneCreatedPlanningFailUserIsNotConnected()
     {
-        $this->clientRequestAuthenticated('POST', '/planning', ['name' => 'azerty']);
+        $this->clientRequestAuthenticated('POST', '/planning', $this->randomPlanningData());
         $this->assertResponseStatusCodeSame(200);
 
-        $plannings = \Safe\json_decode($this->client->getResponse()->getContent(), true);
+        $plannings = json_decode($this->client->getResponse()->getContent(), true);
         $this->client->request('GET', '/planning/'.$plannings['0']['id']);
         $this->assertResponseStatusCodeSame(401);
     }
 
     public function testGetAllCreatedPlanningFailUserIsNotConnected()
     {
-        $this->clientRequestAuthenticated('POST', '/planning', ['name' => '1']);
+        $this->clientRequestAuthenticated('POST', '/planning', $this->randomPlanningData());
         $this->assertResponseStatusCodeSame(200);
 
-        $this->clientRequestAuthenticated('POST', '/planning', ['name' => '2']);
+        $this->clientRequestAuthenticated('POST', '/planning', $this->randomPlanningData());
         $this->assertResponseStatusCodeSame(200);
 
-        $this->clientRequestAuthenticated('POST', '/planning', ['name' => '3']);
+        $this->clientRequestAuthenticated('POST', '/planning', $this->randomPlanningData());
         $this->assertResponseStatusCodeSame(200);
 
         $this->client->request('GET', '/planning');
         $this->assertResponseStatusCodeSame(401);
     }
 
-    //  UPDATE
-    public function testUpdatePlanningFailIfUserIsNotConnected() //no
+    public function testUpdatePlanningFailIfUserIsNotConnected()
     {
-        $this->clientRequestAuthenticated('POST', '/planning', ['name' => 'my-planning']);
+        $this->clientRequestAuthenticated('POST', '/planning', $this->randomPlanningData());
         $this->assertResponseStatusCodeSame(200);
 
-        $plannings = \Safe\json_decode($this->client->getResponse()->getContent(), true);
-        $this->client->request('PATCH', '/planning/'.$plannings[0]['id'], ['name' => 'plouf']);
+        $plannings = json_decode($this->client->getResponse()->getContent(), true);
+        $this->client->request('PATCH', '/planning/'.$plannings[0]['id'], $this->randomPlanningData());
 
         $this->assertResponseStatusCodeSame(401);
     }
 
     public function testUpdateOnePlanning()
     {
-        $this->clientRequestAuthenticated('POST', '/planning', ['name' => 'petit']);
+        $this->clientRequestAuthenticated('POST', '/planning', $this->randomPlanningData());
+        $this->assertResponseStatusCodeSame(200);
+
+        $planningName = self::$faker->words(3, true);
+        $plannings = json_decode($this->client->getResponse()->getContent(), true);
+        $this->clientRequestAuthenticated('PATCH', '/planning/'.$plannings[0]['id'], ['name' => $planningName]);
         $this->assertResponseStatusCodeSame(200);
 
         $plannings = \Safe\json_decode($this->client->getResponse()->getContent(), true);
-        $this->clientRequestAuthenticated('PATCH', '/planning/'.$plannings[0]['id'], ['name' => 'Grand']);
-        $this->assertResponseStatusCodeSame(200);
-
-        $plannings = \Safe\json_decode($this->client->getResponse()->getContent(), true);
-        self::assertEquals('Grand', $plannings[0]['name']);
+        self::assertEquals($planningName, $plannings[0]['name']);
     }
 
     public function testUpdatePlanningDoesNotExist()
     {
-        $this->clientRequestAuthenticated('PATCH', '/planning/0', ['name' => 'Grand']);
+        $this->clientRequestAuthenticated('PATCH', '/planning/0', $this->randomPlanningData());
 
         $this->assertResponseStatusCodeSame(404);
     }
 
-    // DELETE
-    public function testDeleteOnePlanning() // vérifier que le planning n'existe plus
+    public function testDeleteOnePlanning()
     {
-        $this->clientRequestAuthenticated('POST', '/planning', ['name' => 'bye']);
+        $this->clientRequestAuthenticated('POST', '/planning', $this->randomPlanningData());
         $this->assertResponseStatusCodeSame(200);
 
-        $plannings = \Safe\json_decode($this->client->getResponse()->getContent(), true);
+        $plannings = json_decode($this->client->getResponse()->getContent(), true);
+        $this->clientRequestAuthenticated('DELETE', '/planning/'.$plannings[0]['id']);
+        $this->assertResponseStatusCodeSame(200);
+
         $this->clientRequestAuthenticated('GET', '/planning/'.$plannings[0]['id']);
-        $this->assertResponseStatusCodeSame(200);
-
-        $plannings = \Safe\json_decode($this->client->getResponse()->getContent(), true);
-        $this->clientRequestAuthenticated('DELETE', '/planning/'.$plannings[0]['id'], ['name' => 'bye']);
-        $this->assertResponseStatusCodeSame(200);
+        $this->assertResponseStatusCodeSame(404);
     }
 
-//    public function testDeleteAllPlanning()
-//    {
-//        $this->clientRequestAuthenticated('POST', '/planning', ['name' => '1']);
-//        $this->assertResponseStatusCodeSame(200);
-//
-//        $this->clientRequestAuthenticated('POST', '/planning', ['name' => '2']);
-//        $this->assertResponseStatusCodeSame(200);
-//
-//        $this->clientRequestAuthenticated('POST', '/planning', ['name' => '3']);
-//        $this->assertResponseStatusCodeSame(200);
-//
-//        $this->clientRequestAuthenticated('DELETE', '/planning');
-//
-//        $this->assertResponseStatusCodeSame(200);
-//    }
-
-    public function testDeletePlanningDoesNotExist() // no
+    public function testDeletePlanningDoesNotExist()
     {
         $this->clientRequestAuthenticated('DELETE', '/planning/0');
 
         $this->assertResponseStatusCodeSame(404);
     }
 
-    public function testDeleteOnePlanningFailIfUserIsNotConnected() // no
+    public function testDeleteOnePlanningFailIfUserIsNotConnected()
     {
-        $this->clientRequestAuthenticated('POST', '/planning', ['name' => 'bye']);
+        $this->clientRequestAuthenticated('POST', '/planning', $this->randomPlanningData());
         $this->assertResponseStatusCodeSame(200);
 
-        $plannings = \Safe\json_decode($this->client->getResponse()->getContent(), true);
-        $this->clientRequestAuthenticated('GET', '/planning/'.$plannings[0]['id']);
-        $this->assertResponseStatusCodeSame(200);
-
-        $plannings = \Safe\json_decode($this->client->getResponse()->getContent(), true);
-        $this->client->Request('DELETE', '/planning/'.$plannings[0]['id']);
-
+        $plannings = json_decode($this->client->getResponse()->getContent(), true);
+        $this->client->request('DELETE', '/planning/'.$plannings[0]['id']);
         $this->assertResponseStatusCodeSame(401);
     }
-
-//    public function testDeleteAllPlanningFailIfUserIsNotConnected()
-//    {
-//
-//    }
 }
-

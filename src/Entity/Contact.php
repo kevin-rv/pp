@@ -55,7 +55,7 @@ class Contact
     private $work;
 
     /**
-     * @ORM\ManyToMany(targetEntity=event::class, inversedBy="contacts")
+     * @ORM\ManyToMany(targetEntity=Event::class, inversedBy="contacts")
      */
     private $event;
 

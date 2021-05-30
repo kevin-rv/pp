@@ -9,7 +9,6 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Exception;
-use http\Exception\UnexpectedValueException;
 
 /**
  * @ORM\Entity(repositoryClass=UserRepository::class)
@@ -65,11 +64,6 @@ class User
     private $work;
 
     /**
-     * @ORM\OneToMany(targetEntity=Planning::class, mappedBy="user", cascade={"remove", "persist"})
-     */
-    private $plannings;
-
-    /**
      * @ORM\Column(type="string", length=255)
      */
     private $name;
@@ -78,6 +72,11 @@ class User
      * @ORM\OneToMany(targetEntity=Contact::class, mappedBy="user", cascade={"remove", "persist"})
      */
     private $contacts;
+
+    /**
+     * @ORM\OneToMany(targetEntity=Planning::class, mappedBy="user")
+     */
+    private $plannings;
 
     public function __construct()
     {
@@ -175,36 +174,6 @@ class User
         return $this;
     }
 
-    /**
-     * @return Collection|Planning[]
-     */
-    public function getPlannings(): Collection
-    {
-        return $this->plannings;
-    }
-
-    public function addPlanning(Planning $planning): self
-    {
-        if (!$this->plannings->contains($planning)) {
-            $this->plannings[] = $planning;
-            $planning->setUser($this);
-        }
-
-        return $this;
-    }
-
-    public function removePlanning(Planning $planning): self
-    {
-        if ($this->plannings->removeElement($planning)) {
-            // set the owning side to null (unless already changed)
-            if ($planning->getUser() === $this) {
-                $planning->setUser(null);
-            }
-        }
-
-        return $this;
-    }
-
     public function getName(): ?string
     {
         return $this->name;
@@ -248,6 +217,36 @@ class User
     }
 
     /**
+     * @return Collection|Planning[]
+     */
+    public function getPlannings(): Collection
+    {
+        return $this->plannings;
+    }
+
+    public function addPlanning(Planning $planning): self
+    {
+        if (!$this->plannings->contains($planning)) {
+            $this->plannings[] = $planning;
+            $planning->setUser($this);
+        }
+
+        return $this;
+    }
+
+    public function removePlanning(Planning $planning): self
+    {
+        if ($this->plannings->removeElement($planning)) {
+            // set the owning side to null (unless already changed)
+            if ($planning->getUser() === $this) {
+                $planning->setUser(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
      * @throws Exception
      */
     public function update(array $payload): self
@@ -256,7 +255,7 @@ class User
             if (!in_array($key, self::FIELDS_MAP)) {
                 continue;
             }
-            if ($key === 'birthday') {
+            if ('birthday' === $key) {
                 if (!preg_match('#^\d{4}-\d{2}-\d{2}$#', $value)) {
                     throw new UnexpectedDataException('birthday MUST to be in format yyyy-mm-dd');
                 }

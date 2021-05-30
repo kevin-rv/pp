@@ -37,7 +37,9 @@
         "friendsofphp/php-cs-fixer": "^3.0",
         "fzaninotto/faker": "^1.9",
         "phpunit/phpunit": "^9.5",
-        "symfony/maker-bundle": "^1.31"
+        "symfony/css-selector": "^5.2",
+        "symfony/maker-bundle": "^1.31",
+        "symfony/phpunit-bridge": "^5.2"
     },
     "config": {
         "optimize-autoloader": true,
