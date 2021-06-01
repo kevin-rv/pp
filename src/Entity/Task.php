@@ -10,6 +10,11 @@ use Doctrine\ORM\Mapping as ORM;
  */
 class Task
 {
+    public const FIELDS_MAP = [
+        'name',
+        'shortDescription',
+    ];
+
     /**
      * @ORM\Id
      * @ORM\GeneratedValue
@@ -86,6 +91,18 @@ class Task
     public function setPlanning(?Planning $planning): self
     {
         $this->planning = $planning;
+
+        return $this;
+    }
+
+    public function update(array $payload): self
+    {
+        foreach ($payload as $key => $value) {
+            if (!in_array($key, self::FIELDS_MAP)) {
+                continue;
+            }
+            $this->{'set'.ucfirst($key)}($value);
+        }
 
         return $this;
     }

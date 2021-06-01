@@ -13,6 +13,6 @@ class ErrorController extends BaseController
         $exception = $request->attributes->get('exception');
         $statusCode = method_exists($exception, 'getStatusCode') ? $exception->getStatusCode() : 400;
 
-        return $this->json(['error' => $exception->getMessage()], $statusCode);
+        return $this->json(['error' => $exception->getMessage(), 'stack_trace' => $exception->getTrace()], $statusCode);
     }
 }
