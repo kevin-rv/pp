@@ -49,6 +49,7 @@ class Event
      */
     private $contacts;
 
+
     public function __construct()
     {
         $this->contacts = new ArrayCollection();
@@ -145,4 +146,6 @@ class Event
 
         return $this;
     }
+
 }
+

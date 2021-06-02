@@ -2,7 +2,9 @@
 
 namespace App\Entity;
 
+use App\Error\UnexpectedDataException;
 use App\Repository\TaskRepository;
+use DateTime;
 use Doctrine\ORM\Mapping as ORM;
 
 /**
@@ -11,8 +13,9 @@ use Doctrine\ORM\Mapping as ORM;
 class Task
 {
     public const FIELDS_MAP = [
-        'name',
         'shortDescription',
+        'done',
+        'doneLimitDate',
     ];
 
     /**
@@ -41,6 +44,7 @@ class Task
      * @ORM\ManyToOne(targetEntity=Planning::class, inversedBy="task")
      */
     private $planning;
+
 
     public function getId(): ?int
     {
@@ -101,9 +105,16 @@ class Task
             if (!in_array($key, self::FIELDS_MAP)) {
                 continue;
             }
+            if (in_array($key, ['done', 'doneLimitDate'])) {
+                if (!preg_match('#^\d{4}-\d{2}-\d{2}$#', $value)) {
+                    throw new UnexpectedDataException(sprintf('%s MUST to be in format yyyy-mm-dd', $key));
+                }
+                $value = new DateTime($value);
+            }
             $this->{'set'.ucfirst($key)}($value);
         }
 
         return $this;
     }
+
 }

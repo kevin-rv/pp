@@ -63,14 +63,10 @@ class PlanningTest extends AbstractAuthenticatedTest
             self::$faker->words(3, true),
         ];
 
-        $this->clientRequestAuthenticated('POST', '/planning', ['name' => $planningsName[0]]);
-        $this->assertResponseStatusCodeSame(200);
-
-        $this->clientRequestAuthenticated('POST', '/planning', ['name' => $planningsName[1]]);
-        $this->assertResponseStatusCodeSame(200);
-
-        $this->clientRequestAuthenticated('POST', '/planning', ['name' => $planningsName[2]]);
-        $this->assertResponseStatusCodeSame(200);
+        foreach ($planningsName as $planningName) {
+            $this->clientRequestAuthenticated('POST', '/planning', ['name' => $planningName]);
+            $this->assertResponseStatusCodeSame(200);
+        }
 
         $this->clientRequestAuthenticated('GET', '/planning');
         $this->assertResponseStatusCodeSame(200);
@@ -82,9 +78,9 @@ class PlanningTest extends AbstractAuthenticatedTest
             $planningsNameFromResponse[] = $planning['name'];
         }
 
-        self::assertContains($planningsName[0], $planningsNameFromResponse);
-        self::assertContains($planningsName[1], $planningsNameFromResponse);
-        self::assertContains($planningsName[2], $planningsNameFromResponse);
+        foreach ($planningsName as $planningName) {
+            self::assertContains($planningName, $planningsNameFromResponse);
+        }
     }
 
     public function testGetOneNonexistentPlanningFailed()

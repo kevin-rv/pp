@@ -53,4 +53,5 @@ class EventFixtures extends Fixture implements DependentFixtureInterface
             ContactFixtures::class,
         ];
     }
-} // TODO implémenter planning et contact
+}
+
