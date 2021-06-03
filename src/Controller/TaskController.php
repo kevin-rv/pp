@@ -65,9 +65,9 @@ class TaskController extends BaseController
     /**
      * @Route("/planning/{planningId}/task/{taskId}", name="task", methods={"GET"})
      */
-    public function getOneTask(int $planningId, int $taskId): Response
+    public function getOneTask(int $planningId, int $taskId, TaskRepository $taskRepository): Response
     {
-        $task = $this->taskRepository->findOneBy(['planning' => $planningId, 'id' => $taskId]);
+        $task = $taskRepository->findOneTaskByUserPlanning($this->getUser()->getId(), $planningId, $taskId);
 
         if (null === $task) {
             return $this->json(['error' => 'Not Found'], 404);
@@ -79,9 +79,9 @@ class TaskController extends BaseController
     /**
      * @Route("/planning/{planningId}/task/{taskId}", name="task_update", methods={"PATCH"})
      */
-    public function updateTask(int $planningId, int $taskId, EntityManagerInterface $entityManager, Request $request): Response
+    public function updateTask(int $planningId, int $taskId, TaskRepository $taskRepository, EntityManagerInterface $entityManager, Request $request): Response
     {
-        $task = $this->taskRepository->findOneBy(['planning' => $planningId, 'id' => $taskId]);
+        $task = $taskRepository->findOneTaskByUserPlanning($this->getUser()->getId(), $planningId, $taskId);
 
         if (null === $task) {
             return $this->json(['error' => 'Not Found'], 404);
@@ -97,9 +97,9 @@ class TaskController extends BaseController
     /**
      * @Route("/planning/{planningId}/task/{taskId}", name="task_delete", methods={"DELETE"})
      */
-    public function deleteTask(int $planningId, int $taskId, EntityManagerInterface $entityManager): Response
+    public function deleteTask(int $planningId, int $taskId, TaskRepository $taskRepository, EntityManagerInterface $entityManager): Response
     {
-        $task = $this->taskRepository->findOneBy(['user' => $this->getUser(), 'planning' => $planningId, 'id' => $taskId]);
+        $task = $taskRepository->findOneTaskByUserPlanning($this->getUser()->getId(), $planningId, $taskId);
 
         if (null === $task) {
             return $this->json(['error' => 'Not Found'], 404);
@@ -118,7 +118,9 @@ class TaskController extends BaseController
     {
         $normalizeDateTimeToDate = function ($innerObject) {
             if (!$innerObject instanceof \DateTimeInterface) {
+                // @codeCoverageIgnoreStart
                 return null;
+                // @codeCoverageIgnoreEnd
             }
 
             return $innerObject->format('Y-m-d');

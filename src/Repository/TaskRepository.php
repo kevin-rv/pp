@@ -2,8 +2,10 @@
 
 namespace App\Repository;
 
+use App\Entity\Planning;
 use App\Entity\Task;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Doctrine\ORM\Query\Expr\Join;
 use Doctrine\Persistence\ManagerRegistry;
 
 /**
@@ -17,6 +19,27 @@ class TaskRepository extends ServiceEntityRepository
     public function __construct(ManagerRegistry $registry)
     {
         parent::__construct($registry, Task::class);
+    }
+    /**
+     * @return Task[] Returns an array of Task objects
+     */
+
+    public function findOneTaskByUserPlanning(int $userId, int $planningId, int $taskId)
+    {
+        $qb = $this->createQueryBuilder('t');
+
+        $qb
+            ->select('t')
+            ->innerJoin(Planning::class, 'p', Join::WITH, 't.planning = p.id')
+            ->where($qb->expr()->eq('p.user', $userId))
+            ->andwhere($qb->expr()->eq('p.id', $planningId))
+            ->andwhere($qb->expr()->eq('t.id', $taskId))
+        ;
+
+        $query = $qb->getQuery();
+
+        return $query->getOneOrNullResult();
+
     }
 
     // /**

@@ -2,6 +2,7 @@
 
 namespace App\Tests;
 
+use App\Tests\Helper\AuthenticatedClientRequestWrapper;
 use Faker\Factory;
 use Faker\Generator;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
@@ -15,7 +16,7 @@ abstract class AbstractAuthenticatedTest extends WebTestCase
     /**
      * @var array
      */
-    private static $token;
+    protected static $tokens;
 
     /**
      * @var Generator
@@ -31,13 +32,18 @@ abstract class AbstractAuthenticatedTest extends WebTestCase
      * @var UrlGeneratorInterface
      */
     protected $urlGenerator;
+    /**
+     * @var AuthenticatedClientRequestWrapper
+     */
+    protected $authenticatedClient;
 
     public function setUp(): void
     {
         $this->client = static::createClient();
         $this->urlGenerator = $this->client->getContainer()->get('router')->getGenerator();
 
-        if (self::$token) {
+        if (self::$tokens) {
+            $this->authenticatedClient = new AuthenticatedClientRequestWrapper($this->client, self::$tokens);
             return;
         }
 
@@ -61,30 +67,9 @@ abstract class AbstractAuthenticatedTest extends WebTestCase
                 'password' => $password,
             ]);
 
-            self::$token[$i] = json_decode($this->client->getResponse()->getContent(), true);
+            self::$tokens[$i] = json_decode($this->client->getResponse()->getContent(), true);
         }
-    }
 
-    public function clientRequestAuthenticated(
-        string $method,
-        string $uri,
-        array $parameters = [],
-        array $files = [],
-        array $server = [],
-        string $content = null,
-        bool $changeHistory = true,
-        int $tokenId = 0
-    ): ?Crawler {
-        $server['HTTP_Authorization'] = 'Bearer '.self::$token[$tokenId];
-
-        return $this->client->request(
-            $method,
-            $uri,
-            $parameters,
-            $files,
-            $server,
-            $content,
-            $changeHistory
-        );
+        $this->authenticatedClient = new AuthenticatedClientRequestWrapper($this->client, self::$tokens);
     }
 }
