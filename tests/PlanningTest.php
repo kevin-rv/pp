@@ -43,8 +43,8 @@ class PlanningTest extends AbstractAuthenticatedTest
 
     public function testGetOneCreatedPlanningIsSuccessful()
     {
-        $planningName = self::$faker->words(3, true);
-        $this->clientRequestAuthenticated('POST', '/planning', ['name' => $planningName]);
+        $planningData = $this->randomPlanningData();
+        $this->clientRequestAuthenticated('POST', '/planning', planningData);
         $this->assertResponseStatusCodeSame(200);
         $plannings = json_decode($this->client->getResponse()->getContent(), true);
 
@@ -52,7 +52,7 @@ class PlanningTest extends AbstractAuthenticatedTest
         $this->assertResponseStatusCodeSame(200);
         $plannings = json_decode($this->client->getResponse()->getContent(), true);
 
-        self::assertEquals($planningName, $plannings[0]['name']);
+        self::assertEquals($planningData['name'], $plannings[0]['name']);
     }
 
     public function testGetAllCreatedPlanningIsSuccessful()
