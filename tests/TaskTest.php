@@ -353,20 +353,10 @@ class TaskTest extends AbstractAuthenticatedTest
     public function testDeleteTaskDoesNotExist()
     {
         $this->authenticatedClient->setUser(0)->request(
-            'POST',
-            $this->urlGenerator->generate(
-                'task_create',
-                ['planningId' => self::$userPlanningIds[0]]
-            ),
-            $this->randomTaskData()
-        );
-        $this->assertResponseStatusCodeSame(200);
-
-        $this->authenticatedClient->setUser(0)->request(
             'DELETE',
             $this->urlGenerator->generate(
                 'task_delete',
-                ['planningId' => self::$userPlanningIds[0],'taskId' => 0]
+                ['planningId' => self::$userPlanningIds[0], 'taskId' => 0]
             ),
             $this->randomTaskData()
         );
