@@ -243,19 +243,16 @@ class TaskTest extends AbstractAuthenticatedTest
         $this->assertResponseStatusCodeSame(200);
 
         $task = json_decode($this->client->getResponse()->getContent(), true);
-        $value = [
-            'id' => $task[0]['id'],
-            'shortDescription' => self::$faker->text,
-            'done' => self::$faker->date(),
-            'doneLimitDate' => self::$faker->date(),
-        ];
+        $newTaskData = $this->randomTaskData();
+        $newTaskData['id'] = $task[0]['id'];
+        
         $this->authenticatedClient->setUser(0)->request(
             'PATCH',
             $this->urlGenerator->generate(
                 'task_update',
                 ['planningId' => self::$userPlanningIds[0], 'taskId'  => $task[0]['id']]
             ),
-            ['shortDescription' => $value['shortDescription'], 'done' => $value['done'], 'doneLimitDate' => $value['doneLimitDate']]
+            $newTaskData
         );
         $this->assertResponseStatusCodeSame(200);
         $task = json_decode($this->client->getResponse()->getContent(), true);
