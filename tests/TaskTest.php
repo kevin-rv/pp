@@ -264,20 +264,13 @@ class TaskTest extends AbstractAuthenticatedTest
 
     public function testUpdateTaskDoesNotExist()
     {
-        $task = json_decode($this->client->getResponse()->getContent(), true);
-        $value = [
-            'id' => $task[0]['id'],
-            'shortDescription' => self::$faker->text,
-            'done' => self::$faker->date(),
-            'doneLimitDate' => self::$faker->date(),
-        ];
         $this->authenticatedClient->setUser(0)->request(
             'PATCH',
             $this->urlGenerator->generate(
                 'task_update',
                 ['planningId' => self::$userPlanningIds[0], 'taskId'  => 0]
             ),
-            ['shortDescription' => $value['shortDescription'], 'done' => $value['done'], 'doneLimitDate' => $value['doneLimitDate']]
+            $this->randomTaskData()
         );
         $this->assertResponseStatusCodeSame(404);
     }
