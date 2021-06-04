@@ -16,7 +16,7 @@ abstract class AbstractAuthenticatedTest extends WebTestCase
     /**
      * @var array
      */
-    protected static $tokens;
+    protected static $tokens = [];
 
     /**
      * @var Generator
