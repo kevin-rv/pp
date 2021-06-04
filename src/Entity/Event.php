@@ -2,7 +2,9 @@
 
 namespace App\Entity;
 
+use App\Error\UnexpectedDataException;
 use App\Repository\EventRepository;
+use DateTime;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
@@ -12,6 +14,12 @@ use Doctrine\ORM\Mapping as ORM;
  */
 class Event
 {
+    public const FIELDS_MAP = [
+        'shortDescription',
+        'fullDescription',
+        'startDatetime',
+        'endDatetime',
+    ];
     /**
      * @ORM\Id
      * @ORM\GeneratedValue
@@ -116,6 +124,24 @@ class Event
     public function setPlanning(?Planning $planning): self
     {
         $this->planning = $planning;
+
+        return $this;
+    }
+
+    public function update(array $payload): self
+    {
+        foreach ($payload as $key => $value) {
+            if (!in_array($key, self::FIELDS_MAP)) {
+                continue;
+            }
+            if (in_array($key, ['startDatetime', 'endDatetime'])) {
+                if (!preg_match('#^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$#', $value)) {
+                    throw new UnexpectedDataException(sprintf('%s MUST to be in format YYYY-MM-DD hh:mm:ss', $key));
+                }
+                $value = new DateTime($value);
+            }
+            $this->{'set'.ucfirst($key)}($value);
+        }
 
         return $this;
     }

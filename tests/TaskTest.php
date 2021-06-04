@@ -131,7 +131,7 @@ class TaskTest extends AbstractAuthenticatedTest
 
     public function testGetOneTask()
     {
-        $this->authenticatedClient->setUser(0)->request(
+        $this->authenticatedClient->request(
             'POST',
             $this->urlGenerator->generate(
                 'task_create',
@@ -142,7 +142,7 @@ class TaskTest extends AbstractAuthenticatedTest
         $this->assertResponseStatusCodeSame(200);
 
         $task = json_decode($this->client->getResponse()->getContent(), true);
-        $this->authenticatedClient->setUser(0)->request(
+        $this->authenticatedClient->request(
             'GET',
             $this->urlGenerator->generate(
                 'task',
@@ -154,7 +154,7 @@ class TaskTest extends AbstractAuthenticatedTest
 
     public function testGetOneTaskDoesNotExist()
     {
-        $this->authenticatedClient->setUser(0)->request(
+        $this->authenticatedClient->request(
             'GET',
             $this->urlGenerator->generate(
                 'task',
@@ -167,7 +167,7 @@ class TaskTest extends AbstractAuthenticatedTest
 
     public function testGetOneTaskIfUserIsNotConnected()
     {
-        $this->authenticatedClient->setUser(0)->request(
+        $this->authenticatedClient->request(
             'POST',
             $this->urlGenerator->generate(
                 'task_create',
@@ -191,7 +191,7 @@ class TaskTest extends AbstractAuthenticatedTest
     public function testGetAllTaskIfUserIsNotConnected()
     {
         for ($i = 0; $i < 2; $i++) {
-            $this->authenticatedClient->setUser(0)->request(
+            $this->authenticatedClient->request(
                 'POST',
                 $this->urlGenerator->generate(
                     'task_create',
@@ -264,7 +264,7 @@ class TaskTest extends AbstractAuthenticatedTest
 
     public function testUpdateOneTask()
     {
-        $this->authenticatedClient->setUser(0)->request(
+        $this->authenticatedClient->request(
             'POST',
             $this->urlGenerator->generate(
                 'task_create',
@@ -278,7 +278,7 @@ class TaskTest extends AbstractAuthenticatedTest
         $newTaskData = $this->randomTaskData();
         $newTaskData['id'] = $task[0]['id'];
         
-        $this->authenticatedClient->setUser(0)->request(
+        $this->authenticatedClient->request(
             'PATCH',
             $this->urlGenerator->generate(
                 'task_update',
@@ -293,7 +293,7 @@ class TaskTest extends AbstractAuthenticatedTest
 
     public function testUpdateTaskDoesNotExist()
     {
-        $this->authenticatedClient->setUser(0)->request(
+        $this->authenticatedClient->request(
             'PATCH',
             $this->urlGenerator->generate(
                 'task_update',
@@ -306,7 +306,7 @@ class TaskTest extends AbstractAuthenticatedTest
 
     public function testUpdateOneTaskFailIfUserIsNotConnected()
     {
-        $this->authenticatedClient->setUser(0)->request(
+        $this->authenticatedClient->request(
             'POST',
             $this->urlGenerator->generate(
                 'task_create',
@@ -363,7 +363,7 @@ class TaskTest extends AbstractAuthenticatedTest
 
     public function testDeleteOneTask()
     {
-        $this->authenticatedClient->setUser(0)->request(
+        $this->authenticatedClient->request(
             'POST',
             $this->urlGenerator->generate(
                 'task_create',
@@ -374,7 +374,7 @@ class TaskTest extends AbstractAuthenticatedTest
         $this->assertResponseStatusCodeSame(200);
 
         $task = json_decode($this->client->getResponse()->getContent(), true);
-        $this->authenticatedClient->setUser(0)->request(
+        $this->authenticatedClient->request(
             'DELETE',
             $this->urlGenerator->generate(
                 'task_delete',
@@ -386,7 +386,7 @@ class TaskTest extends AbstractAuthenticatedTest
 
     public function testDeleteTaskDoesNotExist()
     {
-        $this->authenticatedClient->setUser(0)->request(
+        $this->authenticatedClient->request(
             'DELETE',
             $this->urlGenerator->generate(
                 'task_delete',
@@ -399,7 +399,7 @@ class TaskTest extends AbstractAuthenticatedTest
 
     public function testDeleteOneTaskFailIfUserIsNotConnected()
     {
-        $this->authenticatedClient->setUser(0)->request(
+        $this->authenticatedClient->request(
             'POST',
             $this->urlGenerator->generate(
                 'task_create',
