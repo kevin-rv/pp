@@ -32,12 +32,12 @@ class PlanningTest extends AbstractAuthenticatedTest
 
     public function testCreatePlanningWithPlanningNameAlreadyExistMustFailed()
     {
-        $planningName = self::$faker->words(3, true);
+        $planningData = $this->randomPlanningData();
 
-        $this->clientRequestAuthenticated('POST', '/planning', ['name' => $planningName]);
+        $this->clientRequestAuthenticated('POST', '/planning', $planningData);
         $this->assertResponseStatusCodeSame(200);
 
-        $this->clientRequestAuthenticated('POST', '/planning', ['name' => $planningName]);
+        $this->clientRequestAuthenticated('POST', '/planning', $planningData);
         $this->assertResponseStatusCodeSame(400);
     }
 
