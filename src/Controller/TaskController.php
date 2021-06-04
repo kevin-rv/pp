@@ -24,20 +24,30 @@ class TaskController extends BaseController
      * @var TaskRepository
      */
     private $taskRepository;
+    /**
+     * @var PlanningRepository
+     */
+    private $planningRepository;
+    /**
+     * @var EntityManagerInterface
+     */
+    private $entityManager;
 
-    public function __construct(RequestStack $requestStack, SerializerInterface $serializer, TaskRepository $taskRepository)
+    public function __construct(RequestStack $requestStack, SerializerInterface $serializer, TaskRepository $taskRepository, PlanningRepository $planningRepository, EntityManagerInterface $entityManager)
     {
         parent::__construct($requestStack);
         $this->serializer = $serializer;
         $this->taskRepository = $taskRepository;
+        $this->planningRepository = $planningRepository;
+        $this->entityManager = $entityManager;
     }
 
     /**
      * @Route("/planning/{planningId}/task", name="task_create", methods={"POST"})
      */
-    public function createTask(int $planningId, PlanningRepository $planningRepository, EntityManagerInterface $entityManager, Request $request, PlanningController $planningController): Response
+    public function createTask(int $planningId, Request $request): Response
     {
-        $planning = $planningRepository->findOneBy(['user' => $this->getUser(), 'id' => $planningId]);
+        $planning = $this->planningRepository->findOneBy(['user' => $this->getUser(), 'id' => $planningId]);
 
         if (null === $planning) {
             return $this->json(['error' => 'Not Found'], 404);
@@ -48,8 +58,8 @@ class TaskController extends BaseController
         $task->update($request->request->all());
         $task->setPlanning($planning);
 
-        $entityManager->persist($task);
-        $entityManager->flush();
+        $this->entityManager->persist($task);
+        $this->entityManager->flush();
 
         return $this->prepareJsonResponse([$task]);
     }
@@ -59,15 +69,21 @@ class TaskController extends BaseController
      */
     public function getAllTask(int $planningId): Response
     {
-        return $this->prepareJsonResponse($this->taskRepository->findBy(['planning' => $planningId]));
+        $planning = $this->planningRepository->findOneBy(['user' => $this->getUser(), 'id' => $planningId]);
+
+        if (null === $planning) {
+            return $this->json(['error' => 'Not Found'], 404);
+        }
+
+        return $this->prepareJsonResponse($this->taskRepository->findAllTaskByUserPlanning($this->getUser()->getId(), $planningId));
     }
 
     /**
      * @Route("/planning/{planningId}/task/{taskId}", name="task", methods={"GET"})
      */
-    public function getOneTask(int $planningId, int $taskId, TaskRepository $taskRepository): Response
+    public function getOneTask(int $planningId, int $taskId): Response
     {
-        $task = $taskRepository->findOneTaskByUserPlanning($this->getUser()->getId(), $planningId, $taskId);
+        $task = $this->taskRepository->findOneTaskByUserPlanning($this->getUser()->getId(), $planningId, $taskId);
 
         if (null === $task) {
             return $this->json(['error' => 'Not Found'], 404);
@@ -79,17 +95,17 @@ class TaskController extends BaseController
     /**
      * @Route("/planning/{planningId}/task/{taskId}", name="task_update", methods={"PATCH"})
      */
-    public function updateTask(int $planningId, int $taskId, TaskRepository $taskRepository, EntityManagerInterface $entityManager, Request $request): Response
+    public function updateTask(int $planningId, int $taskId, Request $request): Response
     {
-        $task = $taskRepository->findOneTaskByUserPlanning($this->getUser()->getId(), $planningId, $taskId);
+        $task = $this->taskRepository->findOneTaskByUserPlanning($this->getUser()->getId(), $planningId, $taskId);
 
         if (null === $task) {
             return $this->json(['error' => 'Not Found'], 404);
         }
 
         $task->update($request->request->all());
-        $entityManager->persist($task);
-        $entityManager->flush();
+        $this->entityManager->persist($task);
+        $this->entityManager->flush();
 
         return $this->prepareJsonResponse([$task]);
     }
@@ -97,24 +113,24 @@ class TaskController extends BaseController
     /**
      * @Route("/planning/{planningId}/task/{taskId}", name="task_delete", methods={"DELETE"})
      */
-    public function deleteTask(int $planningId, int $taskId, TaskRepository $taskRepository, EntityManagerInterface $entityManager): Response
+    public function deleteTask(int $planningId, int $taskId): Response
     {
-        $task = $taskRepository->findOneTaskByUserPlanning($this->getUser()->getId(), $planningId, $taskId);
+        $task = $this->taskRepository->findOneTaskByUserPlanning($this->getUser()->getId(), $planningId, $taskId);
 
         if (null === $task) {
             return $this->json(['error' => 'Not Found'], 404);
         }
 
-        $entityManager->remove($task);
-        $entityManager->flush();
+        $this->entityManager->remove($task);
+        $this->entityManager->flush();
 
         return $this->prepareJsonResponse([$task]);
     }
 
     /**
-     * @param Task[] $task
+     * @param Task[] $tasks
      */
-    public function prepareJsonResponse(array $task): JsonResponse
+    public function prepareJsonResponse(array $tasks): JsonResponse
     {
         $normalizeDateTimeToDate = function ($innerObject) {
             if (!$innerObject instanceof \DateTimeInterface) {
@@ -127,7 +143,7 @@ class TaskController extends BaseController
         };
 
         return $this->json($this->serializer->normalize(
-            $task,
+            $tasks,
             null,
             [
                 AbstractNormalizer::IGNORED_ATTRIBUTES => ['planning'],

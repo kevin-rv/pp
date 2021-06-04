@@ -12,7 +12,6 @@ class TaskTest extends AbstractAuthenticatedTest
     public function setUp(): void
     {
         parent::setUp();
-
         foreach (self::$tokens as $k => $token) {
             $this->authenticatedClient->setUser($k)->request('POST', '/planning', $this->randomPlanningData());
             if (!$this->client->getResponse()->isSuccessful()) {
@@ -21,6 +20,7 @@ class TaskTest extends AbstractAuthenticatedTest
             $plannings = json_decode($this->client->getResponse()->getContent(), true);
             self::$userPlanningIds[] = $plannings[0]['id'];
         }
+        $this->authenticatedClient->setUser(0);
     }
 
     private function randomTaskData(): array
@@ -41,7 +41,7 @@ class TaskTest extends AbstractAuthenticatedTest
     public function testCreateTaskIsSuccessful()
     {
         $data =$this->randomTaskData();
-        $this->authenticatedClient->setUser(0)->request(
+        $this->authenticatedClient->request(
             'POST',
             $this->urlGenerator->generate('task_create', ['planningId' => self::$userPlanningIds[0]]),
             $data
@@ -53,13 +53,12 @@ class TaskTest extends AbstractAuthenticatedTest
         self::assertEquals($data['shortDescription'], $task['shortDescription']);
         self::assertEquals($data['done'], $task['done']);
         self::assertEquals($data['doneLimitDate'], $task['doneLimitDate']);
-        // Vérifier que la donnée de la tache crée correspond bien au donnée envoyées
     }
 
 
-    public function testCreateTaskPlanningNotExist() // a revoir
+    public function testCreateTaskPlanningNotExist()
     {
-        $this->authenticatedClient->setUser(0)->request(
+        $this->authenticatedClient->request(
             'POST',
             $this->urlGenerator->generate(
                 'task_create',
@@ -70,32 +69,39 @@ class TaskTest extends AbstractAuthenticatedTest
         $this->assertResponseStatusCodeSame(404);
     }
 
-//    public function testCreateTaskFailIfUserIsNotConnected()
-//    {
-//
-//      //  $this->client->request('POST', '/planning/'.self::$userPlanningIds[0].'/task', $this->randomTaskData());
-//        $this->authenticatedClient->setUser(0)->request(
-//            'POST',
-//            $this->urlGenerator->generate(
-//                'task_create',
-//                ['planningId' => self::$userPlanningIds[0]]
-//            ),
-//            $this->randomTaskData()
-//        );
-//        $this->assertResponseStatusCodeSame(401);
-//    }
+
+    public function testCreateTaskFailIfUserIsNotConnected()
+    {
+        $this->client->request(
+            'POST',
+            $this->urlGenerator->generate(
+                'task_create',
+                ['planningId' => self::$userPlanningIds[0]]
+            ),
+            $this->randomTaskData()
+        );
+        $this->assertResponseStatusCodeSame(401);
+    }
 
     public function testCreateTaskFailIfNotUserPlanning()
     {
-        $this->authenticatedClient->setUser(0)->request('POST', '/planning/'.self::$userPlanningIds[1].'/task');
+        $this->authenticatedClient->setUser(0)->request(
+            'POST',
+            $this->urlGenerator->generate(
+                'task_create',
+                ['planningId' => self::$userPlanningIds[1]]
+            ),
+            $this->randomTaskData()
+        );
         $this->assertResponseStatusCodeSame(404);
     }
 
     // GET
     public function testGetAllTask()
     {
+        $createdTasks = [];
         for ($i = 0; $i < 2; $i++) {
-            $this->authenticatedClient->setUser(0)->request(
+            $this->authenticatedClient->request(
                 'POST',
                 $this->urlGenerator->generate(
                     'task_create',
@@ -103,21 +109,25 @@ class TaskTest extends AbstractAuthenticatedTest
                 ),
                 $this->randomTaskData()
             );
+            $this->assertResponseStatusCodeSame(200);
+            $createdTasks[] = json_decode($this->client->getResponse()->getContent(), true)[0];
         }
-        $this->assertResponseStatusCodeSame(200);
 
         $this->authenticatedClient->setUser(0)->request(
             'GET',
             $this->urlGenerator->generate(
                 'task_list',
                 ['planningId' => self::$userPlanningIds[0]]
-            ),
-            $this->randomTaskData()
+            )
         );
         $this->assertResponseStatusCodeSame(200);
+        $allTasks = json_decode($this->client->getResponse()->getContent(), true);
 
-        // Vérifier que les taches crées sont bien présentes
+        foreach ($createdTasks as $task) {
+            $this->assertContains($task, $allTasks);
+        }
     }
+
 
     public function testGetOneTask()
     {
@@ -137,13 +147,25 @@ class TaskTest extends AbstractAuthenticatedTest
             $this->urlGenerator->generate(
                 'task',
                 ['planningId' => self::$userPlanningIds[0], 'taskId' => $task[0]['id']]
-            ),
-            $this->randomTaskData()
+            )
         );
         $this->assertResponseStatusCodeSame(200);
     }
 
     public function testGetOneTaskDoesNotExist()
+    {
+        $this->authenticatedClient->setUser(0)->request(
+            'GET',
+            $this->urlGenerator->generate(
+                'task',
+                ['planningId' => self::$userPlanningIds[0],'taskId' => 0]
+            )
+        );
+
+        $this->assertResponseStatusCodeSame(404);
+    }
+
+    public function testGetOneTaskIfUserIsNotConnected()
     {
         $this->authenticatedClient->setUser(0)->request(
             'POST',
@@ -155,55 +177,43 @@ class TaskTest extends AbstractAuthenticatedTest
         );
         $this->assertResponseStatusCodeSame(200);
 
-        $this->authenticatedClient->setUser(0)->request(
+        $task = json_decode($this->client->getResponse()->getContent(), true);
+        $this->client->request(
             'GET',
             $this->urlGenerator->generate(
                 'task',
-                ['planningId' => self::$userPlanningIds[0],'taskId' => 0]
-            ),
-            $this->randomTaskData()
+                ['planningId' => self::$userPlanningIds[0], 'taskId' => $task[0]['id']]
+            )
         );
-
-        $this->assertResponseStatusCodeSame(404);
+        $this->assertResponseStatusCodeSame(401);
     }
 
+    public function testGetAllTaskIfUserIsNotConnected()
+    {
+        for ($i = 0; $i < 2; $i++) {
+            $this->authenticatedClient->setUser(0)->request(
+                'POST',
+                $this->urlGenerator->generate(
+                    'task_create',
+                    ['planningId' => self::$userPlanningIds[0]]
+                ),
+                $this->randomTaskData()
+            );
+        }
+        $this->assertResponseStatusCodeSame(200);
 
-//    public function testGetOneTaskIfUserIsNotConnected()
-//    {
-//        $this->clientRequestAuthenticated('POST', '/planning', $this->randomPlanningData());
-//        $this->assertResponseStatusCodeSame(200);
-//
-//        $plannings = json_decode($this->client->getResponse()->getContent(), true);
-//        $this->clientRequestAuthenticated('POST', sprintf('/planning/%s/task', $plannings[0]['id']), $this->randomTaskData());
-//        $this->assertResponseStatusCodeSame(200);
-//
-//        $task = json_decode($this->client->getResponse()->getContent(), true);
-//        $this->client->request('GET', sprintf('/planning/%s/task/%s', $plannings[0]['id'], $task[0]['id']), $this->randomTaskData());
-//        $this->assertResponseStatusCodeSame(401);
-//    }
-//
-    ////    public function testGetAllTaskIfUserIsNotConnected()
-    ////    {
-    ////        $this->clientRequestAuthenticated('POST', '/planning', $this->randomPlanningData());
-    ////        $this->assertResponseStatusCodeSame(200);
-    ////
-    ////        $plannings = json_decode($this->client->getResponse()->getContent(), true);
-    ////        $this->clientRequestAuthenticated('POST', sprintf('/planning/%s/task', $plannings[0]['id']), $this->randomTaskData());
-    ////        $this->assertResponseStatusCodeSame(200);
-    ////
-    ////        $this->clientRequestAuthenticated('POST', sprintf('/planning/%s/task', $plannings[0]['id']), $this->randomTaskData());
-    ////        $this->assertResponseStatusCodeSame(200);
-    ////
-    ////        $this->clientRequestAuthenticated('POST', sprintf('/planning/%s/task', $plannings[0]['id']), $this->randomTaskData());
-    ////        $this->assertResponseStatusCodeSame(200);
-    ////
-    ////
-    ////        $this->client->request('GET', sprintf('/planning/%s/task', $plannings[0]['id']), $this->randomTaskData());
-    ////
-    ////        $this->assertResponseStatusCodeSame(401);
-    ////    }
-//
-    public function testGetTaskFailIfNotUserPlanning()
+        $this->client->request(
+            'GET',
+            $this->urlGenerator->generate(
+                'task_list',
+                ['planningId' => self::$userPlanningIds[0]]
+            )
+        );
+
+        $this->assertResponseStatusCodeSame(401);
+    }
+
+    public function testGetOneTaskFailIfNotUserPlanning()
     {
         $this->authenticatedClient->setUser(0)->request(
             'POST',
@@ -221,14 +231,36 @@ class TaskTest extends AbstractAuthenticatedTest
             $this->urlGenerator->generate(
                 'task',
                 ['planningId' => self::$userPlanningIds[0],'taskId' => $task[0]['id']]
-            ),
-            $this->randomTaskData()
+            )
         );
         $this->assertResponseStatusCodeSame(404);
     }
 
+    public function testGetAllTaskFailIfNotUserPlanning()
+    {
+        for ($i = 0; $i < 2; $i++) {
+            $this->authenticatedClient->setUser(0)->request(
+                'POST',
+                $this->urlGenerator->generate(
+                    'task_create',
+                    ['planningId' => self::$userPlanningIds[0]]
+                ),
+                $this->randomTaskData()
+            );
+            $this->assertResponseStatusCodeSame(200);
+        }
 
-//    // UPDATE
+        $this->authenticatedClient->setUser(1)->request(
+            'GET',
+            $this->urlGenerator->generate(
+                'task_list',
+                ['planningId' => self::$userPlanningIds[0]]
+            )
+        );
+        $this->assertResponseStatusCodeSame(404);
+    }
+
+    // UPDATE
 
     public function testUpdateOneTask()
     {
@@ -256,7 +288,7 @@ class TaskTest extends AbstractAuthenticatedTest
         );
         $this->assertResponseStatusCodeSame(200);
         $task = json_decode($this->client->getResponse()->getContent(), true);
-        self::assertEquals($value, $task[0]);
+        self::assertEquals($newTaskData, $task[0]);
     }
 
     public function testUpdateTaskDoesNotExist()
@@ -272,34 +304,37 @@ class TaskTest extends AbstractAuthenticatedTest
         $this->assertResponseStatusCodeSame(404);
     }
 
-//    public function testUpdateOneTaskFailIfUserIsNotConnected()
-//    {
-//        $this->clientRequestAuthenticated('POST', '/planning', $this->randomPlanningData());
-//        $this->assertResponseStatusCodeSame(200);
-//        $plannings = json_decode($this->client->getResponse()->getContent(), true);
-//
-//        $this->clientRequestAuthenticated('POST', sprintf('/planning/%s/task', $plannings[0]['id']), $this->randomTaskData());
-//        $this->assertResponseStatusCodeSame(200);
-//
-//        $task = json_decode($this->client->getResponse()->getContent(), true);
-//        $this->clientRequestAuthenticated('GET', sprintf('/planning/%s/task/%s', $plannings[0]['id'], $task[0]['id']), $this->randomTaskData());
-//
-//
-//        $task = json_decode($this->client->getResponse()->getContent(), true);
-//        $value = [
-//            'id' => $task[0]['id'],
-//            'shortDescription' => self::$faker->text,
-//            'done' => self::$faker->date(),
-//            'doneLimitDate' => self::$faker->date(),
-//        ];
-//        $this->client->request(
-//            'PATCH',
-//            sprintf('/planning/%s/task/%s', $plannings[0]['id'], $task[0]['id']),
-//            ['shortDescription' => $value['shortDescription'], 'done' => $value['done'], 'doneLimitDate' => $value['doneLimitDate']]
-//        );
-//        $this->assertResponseStatusCodeSame(401);
-//    }
-//
+    public function testUpdateOneTaskFailIfUserIsNotConnected()
+    {
+        $this->authenticatedClient->setUser(0)->request(
+            'POST',
+            $this->urlGenerator->generate(
+                'task_create',
+                ['planningId' => self::$userPlanningIds[0]]
+            ),
+            $this->randomTaskData()
+        );
+        $this->assertResponseStatusCodeSame(200);
+
+        $task = json_decode($this->client->getResponse()->getContent(), true);
+        $value = [
+            'id' => $task[0]['id'],
+            'shortDescription' => self::$faker->text,
+            'done' => self::$faker->date(),
+            'doneLimitDate' => self::$faker->date(),
+        ];
+
+        $this->client->request(
+            'PATCH',
+            $this->urlGenerator->generate(
+                'task_update',
+                ['planningId' => self::$userPlanningIds[0], 'taskId' => $task[0]['id']]
+            ),
+            ['shortDescription' => $value['shortDescription'], 'done' => $value['done'], 'doneLimitDate' => $value['doneLimitDate']]
+        );
+        $this->assertResponseStatusCodeSame(401);
+    }
+
     public function testUpdateTaskIfNotMyPlanning()
     {
         $this->authenticatedClient->setUser(0)->request(
@@ -344,8 +379,7 @@ class TaskTest extends AbstractAuthenticatedTest
             $this->urlGenerator->generate(
                 'task_delete',
                 ['planningId' => self::$userPlanningIds[0], 'taskId' => $task[0]['id']]
-            ),
-            $this->randomTaskData()
+            )
         );
         $this->assertResponseStatusCodeSame(200);
     }
@@ -357,27 +391,35 @@ class TaskTest extends AbstractAuthenticatedTest
             $this->urlGenerator->generate(
                 'task_delete',
                 ['planningId' => self::$userPlanningIds[0], 'taskId' => 0]
-            ),
-            $this->randomTaskData()
+            )
         );
 
         $this->assertResponseStatusCodeSame(404);
     }
 
-//    public function testDeleteOneTaskFailIfUserIsNotConnected()
-//    {
-//        $this->clientRequestAuthenticated('POST', '/planning', $this->randomPlanningData());
-//        $this->assertResponseStatusCodeSame(200);
-//
-//        $plannings = json_decode($this->client->getResponse()->getContent(), true);
-//        $this->clientRequestAuthenticated('POST', sprintf('/planning/%s/task', $plannings[0]['id']), $this->randomTaskData());
-//        $this->assertResponseStatusCodeSame(200);
-//
-//        $task = json_decode($this->client->getResponse()->getContent(), true);
-//        $this->client->request('DELETE', sprintf('/planning/%s/task/%s', $plannings[0]['id'], $task[0]['id']), $this->randomTaskData());
-//        $this->assertResponseStatusCodeSame(401);
-//    }
-//
+    public function testDeleteOneTaskFailIfUserIsNotConnected()
+    {
+        $this->authenticatedClient->setUser(0)->request(
+            'POST',
+            $this->urlGenerator->generate(
+                'task_create',
+                ['planningId' => self::$userPlanningIds[0]]
+            ),
+            $this->randomTaskData()
+        );
+        $this->assertResponseStatusCodeSame(200);
+
+        $task = json_decode($this->client->getResponse()->getContent(), true);
+        $this->client->request(
+            'DELETE',
+            $this->urlGenerator->generate(
+                'task_delete',
+                ['planningId' => self::$userPlanningIds[0], 'taskId' => $task[0]['id']]
+            )
+        );
+        $this->assertResponseStatusCodeSame(401);
+    }
+
     public function testDeleteTaskIfNotMyPlanning()
     {
         $this->authenticatedClient->setUser(0)->request(
@@ -396,8 +438,7 @@ class TaskTest extends AbstractAuthenticatedTest
             $this->urlGenerator->generate(
                 'task_delete',
                 ['planningId' => self::$userPlanningIds[0],'taskId' => $task[0]['id']]
-            ),
-            $this->randomTaskData()
+            )
         );
         $this->assertResponseStatusCodeSame(404);
     }

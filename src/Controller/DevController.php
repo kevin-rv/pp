@@ -8,12 +8,15 @@ use App\Security\JWT;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 
+/**
+ * @codeCoverageIgnore
+ */
 class DevController extends BaseController
 {
     /**
      * @Route("/dev/generate-jwt-key", name="jwt_key_gen", options={"auth": false})
      */
-    public function index(Kernel $kernel, JWT $jwt): Response
+    public function generateJWTKey(Kernel $kernel, JWT $jwt): Response
     {
         if ('dev' !== $kernel->getEnvironment()) {
             return $this->json(['error' => 'Forbidden'], 403);

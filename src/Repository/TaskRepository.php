@@ -20,10 +20,10 @@ class TaskRepository extends ServiceEntityRepository
     {
         parent::__construct($registry, Task::class);
     }
-    /**
-     * @return Task[] Returns an array of Task objects
-     */
 
+    /**
+     * @return Task|null Returns an Task object
+     */
     public function findOneTaskByUserPlanning(int $userId, int $planningId, int $taskId)
     {
         $qb = $this->createQueryBuilder('t');
@@ -40,6 +40,25 @@ class TaskRepository extends ServiceEntityRepository
 
         return $query->getOneOrNullResult();
 
+    }
+
+    /**
+     * @return Task[] Returns an array of Task objects
+     */
+    public function findAllTaskByUserPlanning(int $userId, int $planningId)
+    {
+        $qb = $this->createQueryBuilder('t');
+
+        $qb
+            ->select('t')
+            ->innerJoin(Planning::class, 'p', Join::WITH, 't.planning = p.id')
+            ->where($qb->expr()->eq('p.user', $userId))
+            ->andwhere($qb->expr()->eq('p.id', $planningId))
+        ;
+
+        $query = $qb->getQuery();
+
+        return $query->getResult();
     }
 
     // /**
