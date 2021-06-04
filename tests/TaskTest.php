@@ -16,7 +16,7 @@ class TaskTest extends AbstractAuthenticatedTest
         foreach (self::$tokens as $k => $token) {
             $this->authenticatedClient->setUser($k)->request('POST', '/planning', $this->randomPlanningData());
             if (!$this->client->getResponse()->isSuccessful()) {
-                $this->markTestIncomplete();
+                $this->markTestIncomplete(sprintf('Fail to instanciate planning for user %s', $k));
             }
             $plannings = json_decode($this->client->getResponse()->getContent(), true);
             self::$userPlanningIds[] = $plannings[0]['id'];
