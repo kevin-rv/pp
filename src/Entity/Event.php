@@ -136,7 +136,7 @@ class Event
             }
             if (in_array($key, ['startDatetime', 'endDatetime'])) {
                 if (!preg_match('#^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$#', $value)) {
-                    throw new UnexpectedDataException(sprintf('%s MUST to be in format YYYY-MM-DD hh:mm:ss', $key));
+                    throw new UnexpectedDataException(sprintf('%s MUST to be in format YYYY-MM-DD hh:mm:ss', $key)); // TODO voir format
                 }
                 $value = new DateTime($value);
             }

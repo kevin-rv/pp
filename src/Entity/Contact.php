@@ -2,7 +2,9 @@
 
 namespace App\Entity;
 
+use App\Error\UnexpectedDataException;
 use App\Repository\ContactRepository;
+use DateTime;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
@@ -12,6 +14,16 @@ use Doctrine\ORM\Mapping as ORM;
  */
 class Contact
 {
+    public const FIELDS_MAP = [
+        'name',
+        'phoneNumber',
+        'home',
+        'birthday',
+        'email',
+        'relationship',
+        'work',
+    ];
+
     /**
      * @ORM\Id
      * @ORM\GeneratedValue
@@ -93,6 +105,10 @@ class Contact
 
     public function setPhoneNumber(?string $phoneNumber): self
     {
+        if (!preg_match('#^(\+\d{1,4}\s*)?(\(\d{1,5}\))?(\s*\d{1,2}){1,6}$#', $phoneNumber)) {
+            throw new UnexpectedDataException('phone number MUST match regex format: ^(\+\d{1,4}\s*)?(\(\d{1,5}\))?(\s*\d{1,2}){1,6}$');
+        }
+
         $this->phoneNumber = $phoneNumber;
 
         return $this;
@@ -158,6 +174,23 @@ class Contact
         return $this;
     }
 
+    public function update(array $payload): self
+    {
+        foreach ($payload as $key => $value) {
+            if (!in_array($key, self::FIELDS_MAP)) {
+                continue;
+            }
+            if (in_array($key, ['birthday'])) {
+                if (!preg_match('#^\d{4}-\d{2}-\d{2}$#', $value)) {
+                    throw new UnexpectedDataException(sprintf('%s MUST to be in format yyyy-mm-dd', $key));
+                }
+                $value = new DateTime($value);
+            }
+            $this->{'set'.ucfirst($key)}($value);
+        }
+
+        return $this;
+    }
     /**
      * @return Collection|event[]
      */
