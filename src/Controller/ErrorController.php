@@ -20,7 +20,7 @@ class ErrorController extends BaseController
         $responseData = ['error' => $exception->getMessage()];
 
         if ('dev' !== $kernel->getEnvironment()) {
-            $responseData['stack_trace'] = $exception->getTrace();
+            $responseData['stack_trace'] = explode("\n#", $exception->getTraceAsString());
         }
 
         return $this->json($responseData, $statusCode);

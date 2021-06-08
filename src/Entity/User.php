@@ -181,6 +181,9 @@ class User
 
     public function setName(string $name): self
     {
+        if ('' === $name) {
+            throw new UnexpectedDataException('name MUST NOT be empty');
+        }
         $this->name = $name;
 
         return $this;

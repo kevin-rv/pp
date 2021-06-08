@@ -69,7 +69,7 @@ class Contact
     /**
      * @ORM\ManyToMany(targetEntity=Event::class, inversedBy="contacts")
      */
-    private $event;
+    private $events;
 
     /**
      * @ORM\ManyToOne(targetEntity=User::class, inversedBy="contact")
@@ -78,7 +78,7 @@ class Contact
 
     public function __construct()
     {
-        $this->event = new ArrayCollection();
+        $this->events = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -93,6 +93,9 @@ class Contact
 
     public function setName(string $name): self
     {
+        if ('' === $name) {
+            throw new UnexpectedDataException('name MUST NOT be empty');
+        }
         $this->name = $name;
 
         return $this;
@@ -192,25 +195,25 @@ class Contact
         return $this;
     }
     /**
-     * @return Collection|event[]
+     * @return Collection|Event[]
      */
-    public function getEvent(): Collection
+    public function getEvents(): Collection
     {
-        return $this->event;
+        return $this->events;
     }
 
-    public function addEvent(event $event): self
+    public function addEvent(Event $event): self
     {
-        if (!$this->event->contains($event)) {
-            $this->event[] = $event;
+        if (!$this->events->contains($event)) {
+            $this->events[] = $event;
         }
 
         return $this;
     }
 
-    public function removeEvent(event $event): self
+    public function removeEvent(Event $event): self
     {
-        $this->event->removeElement($event);
+        $this->events->removeElement($event);
 
         return $this;
     }

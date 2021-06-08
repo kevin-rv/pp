@@ -112,4 +112,123 @@ class UserTest extends WebTestCase
 
         $this->assertResponseStatusCodeSame(400);
     }
+
+    /**
+     * @dataProvider getValidUserData
+     */
+    public function testGetUser($userData)
+    {
+        $client = static::createClient();
+        $client->request('POST', '/user', $userData);
+        $this->assertResponseStatusCodeSame(200);
+
+        $client->request(
+            'GET',
+            '/user'
+        );
+        $this->assertResponseStatusCodeSame(200);
+    }
+
+    /**
+     * @dataProvider getValidUserData
+     */
+    public function testUpdateUser($userData)
+    {
+        $client = static::createClient();
+        $client->request('POST', '/user', $userData);
+        $this->assertResponseStatusCodeSame(200);
+
+        $client->request(
+            'PATCH',
+            '/user',
+            $userData
+        );
+        $this->assertResponseStatusCodeSame(200);
+    }
+
+    /**
+     * @dataProvider getValidUserData
+     */
+    public function testUpdateWithBadBirthdayReturn400($userData): void
+    {
+        $client = static::createClient();
+        $client->request('POST', '/user', $userData);
+        $this->assertResponseStatusCodeSame(200);
+        $response = json_decode($client->getResponse()->getContent(), true);
+
+        $userData['birthday'] = 'bonjour';
+        $client->request('PATCH', '/user', $userData);
+        $this->assertResponseStatusCodeSame(400);
+
+        $this->assertArrayHasKey('error', $response);
+        $this->assertEquals('birthday MUST to be in format yyyy-mm-dd', $response['error']);
+    }
+
+    /**
+     * @dataProvider getValidUserData
+     */
+    public function testUpdateWithBadEmailReturn400($userData): void
+    {
+        $client = static::createClient();
+        $client->request('POST', '/user', $userData);
+        $this->assertResponseStatusCodeSame(200);
+        $response = json_decode($client->getResponse()->getContent(), true);
+
+        $userData['email'] = 'bad email dzedzed dezdze';
+        $client->request('PATCH', '/user', $userData);
+
+        $this->assertResponseStatusCodeSame(400);
+
+        $this->assertArrayHasKey('error', $response);
+        $this->assertEquals('email MUST to be a valid email', $response['error']);
+    }
+
+    /**
+     * @dataProvider getValidUserData
+     */
+    public function testUpdateWithBadPhoneNumberReturn400($userData): void
+    {
+        $client = static::createClient();
+        $client->request('POST', '/user', $userData);
+        $this->assertResponseStatusCodeSame(200);
+        $response = json_decode($client->getResponse()->getContent(), true);
+
+        $userData['phoneNumber'] = 'bad phone number';
+        $client->request('PATCH', '/user', $userData);
+
+        $this->assertResponseStatusCodeSame(400);
+
+        $this->assertArrayHasKey('error', $response);
+        $this->assertEquals('phone number MUST match regex format: ^(\+\d{1,4}\s*)?(\(\d{1,5}\))?(\s*\d{1,2}){1,6}$', $response['error']);
+    }
+
+    /**
+     * @dataProvider getValidUserData
+     */
+    public function testUpdateWithExistingEmailReturn400($userData): void // a refaire
+    {
+        $client = static::createClient();
+        $client->request('POST', '/user', $userData);
+        $this->assertResponseStatusCodeSame(200);
+
+        $client->request('PATCH', '/user', $userData);
+
+        $this->assertResponseStatusCodeSame(400);
+    }
+
+    /**
+     * @dataProvider getValidUserData
+     */
+    public function testDeleteUser($userData)
+    {
+        $client = static::createClient();
+        $client->request('POST', '/user', $userData);
+        $this->assertResponseStatusCodeSame(200);
+
+        $client->request(
+            'DELETE',
+            '/user'
+        );
+        $this->assertResponseStatusCodeSame(200);
+    }
 }

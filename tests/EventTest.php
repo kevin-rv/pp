@@ -26,10 +26,11 @@ class EventTest extends AbstractAuthenticatedTest
     private function randomEventData(): array
     {
         return [
-            'shortDescription' => self::$faker->text,
+            'shortDescription' => self::$faker->words(3, true),
             'fullDescription' => self::$faker->text,
-            'startDatetime' => self::$faker->dateTime,
-            'endDatetime' => self::$faker->dateTime,
+            'startDatetime' => self::$faker->dateTime->format(DATE_ATOM),
+            'endDatetime' => self::$faker->dateTime->format(DATE_ATOM),
+            'contacts' => [],
         ];
     }
 

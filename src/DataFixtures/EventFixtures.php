@@ -24,13 +24,13 @@ class EventFixtures extends Fixture implements DependentFixtureInterface
     public function load(ObjectManager $manager)
     {
         for ($i = $j = $k = 0; $i < 1000; ++$i) {
-            $event = new Event();
-            $event->setShortDescription($this->faker->text(45));
-            $event->setFullDescription($this->faker->realText());
-            $event->setStartDatetime($this->faker->dateTime);
-            $event->setEndDatetime($this->faker->dateTime);
-            $event->setPlanning($this->getReference('planning_'.$j));
-            $event->addContact($this->getReference('contact_'.$k));
+            $events = new Event();
+            $events->setShortDescription($this->faker->text(45));
+            $events->setFullDescription($this->faker->realText());
+            $events->setStartDatetime($this->faker->dateTime);
+            $events->setEndDatetime($this->faker->dateTime);
+            $events->setPlanning($this->getReference('planning_'.$j));
+            $events->addContact($this->getReference('contact_'.$k));
             ++$j;
             if (100 === $j) {
                 $j = 0;
@@ -41,7 +41,7 @@ class EventFixtures extends Fixture implements DependentFixtureInterface
             }
 
             // table intermédiaire ?
-            $manager->persist($event);
+            $manager->persist($events);
         }
         $manager->flush();
     }

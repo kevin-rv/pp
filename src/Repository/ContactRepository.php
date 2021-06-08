@@ -32,7 +32,6 @@ class ContactRepository extends ServiceEntityRepository
         $qb
             ->select('c')
             ->innerJoin(User::class, 'u', Join::WITH, 'c.user = u.id')
-//            ->where($qb->expr()->eq('u.user', $userId))
             ->where($qb->expr()->eq('u.id', $userId))
             ->andwhere($qb->expr()->eq('c.id', $contactId))
         ;
@@ -46,14 +45,13 @@ class ContactRepository extends ServiceEntityRepository
     /**
      * @return Contact[] Returns an array of Contact objects
      */
-    public function findAllContactByUser(int $userId, int $contactId)
+    public function findAllContactByUser(int $userId)
     {
         $qb = $this->createQueryBuilder('c');
 
         $qb
             ->select('c')
             ->innerJoin(User::class, 'u', Join::WITH, 'c.user = u.id')
-//            ->where($qb->expr()->eq('u.user', $userId))
             ->where($qb->expr()->eq('u.id', $userId))
         ;
 
@@ -61,6 +59,7 @@ class ContactRepository extends ServiceEntityRepository
 
         return $query->getResult();
     }
+
     // /**
     //  * @return Contact[] Returns an array of Contact objects
     //  */

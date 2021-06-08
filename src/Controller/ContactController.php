@@ -5,7 +5,6 @@ namespace App\Controller;
 
 use App\Entity\Contact;
 use App\Repository\ContactRepository;
-use App\Repository\UserRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -17,10 +16,7 @@ use Symfony\Component\Serializer\SerializerInterface;
 
 class ContactController extends BaseController
 {
-    /**
-     * @var UserRepository
-     */
-    private $userRepository;
+
     /**
      * @var SerializerInterface
      */
@@ -34,29 +30,22 @@ class ContactController extends BaseController
      */
     private $contactRepository;
 
-    public function __construct(RequestStack $requestStack, SerializerInterface $serializer, UserRepository $userRepository, ContactRepository $contactRepository, EntityManagerInterface $entityManager)
+    public function __construct(RequestStack $requestStack, SerializerInterface $serializer, ContactRepository $contactRepository, EntityManagerInterface $entityManager)
     {
         parent::__construct($requestStack);
         $this->serializer = $serializer;
         $this->entityManager = $entityManager;
-        $this->userRepository = $userRepository;
         $this->contactRepository = $contactRepository;
     }
     /**
      * @Route("/contact", name="contact_create", methods={"POST"})
      */
-    public function createContact(int $userId, Request $request): Response
+    public function createContact(Request $request): Response
     {
-        $user = $this->userRepository->findOneBy(['user' => $this->getUser(), 'id' => $userId]);
-
-        if (null === $user) {
-            return $this->json(['error' => 'Not Found'], 404);
-        }
-
         $contact = new contact();
 
         $contact->update($request->request->all());
-        $contact->setUser($user);
+        $contact->setUser($this->getUser());
 
         $this->entityManager->persist($contact);
         $this->entityManager->flush();
@@ -67,24 +56,18 @@ class ContactController extends BaseController
     /**
      * @Route("/contacts", name="contact_list", methods={"GET"})
      */
-    public function getAllContact(int $userId): Response
+    public function getAllContact(): Response
     {
-        $user = $this->userRepository->findOneBy(['user' => $this->getUser(), 'id' => $userId]);
-
-        if (null === $user) {
-            return $this->json(['error' => 'Not Found'], 404);
-        }
-
-        return $this->prepareJsonResponse($this->contactRepository->findAllContactByUser($this->getUser()->getId(), $userId));
+        return $this->prepareJsonResponse($this->contactRepository->findAllContactByUser($this->getUser()->getId()));
     }
 
 
     /**
      * @Route("/contact/{contactId}", name="contact", methods={"GET"})
      */
-    public function getOneContact(int $userId, int $contactId): Response
+    public function getOneContact(int $contactId): Response
     {
-        $contact = $this->contactRepository->findOneContactByUser($userId, $contactId);
+        $contact = $this->contactRepository->findOneContactByUser($this->getUser()->getId(), $contactId);
 
         if (null === $contact) {
             return $this->json(['error' => 'Not Found'], 404);
@@ -96,9 +79,9 @@ class ContactController extends BaseController
     /**
      * @Route("/contact/{contactId}", name="contact_update", methods={"PATCH"})
      */
-    public function updateContact(int $userId, int $contactId, Request $request): Response
+    public function updateContact(int $contactId, Request $request): Response
     {
-        $contact = $this->contactRepository->findOneContactByUser($userId, $contactId);
+        $contact = $this->contactRepository->findOneContactByUser($this->getUser()->getId(), $contactId);
 
         if (null === $contact) {
             return $this->json(['error' => 'Not Found'], 404);
@@ -114,9 +97,9 @@ class ContactController extends BaseController
     /**
      * @Route("/contact/{contactId}", name="contact_delete", methods={"DELETE"})
      */
-    public function deleteContact(int $userId, int $contactId): Response
+    public function deleteContact(int $contactId): Response
     {
-        $contact = $this->contactRepository->findOneContactByUser($userId, $contactId);
+        $contact = $this->contactRepository->findOneContactByUser($this->getUser()->getId(), $contactId);
 
         if (null === $contact) {
             return $this->json(['error' => 'Not Found'], 404);
@@ -127,15 +110,34 @@ class ContactController extends BaseController
 
         return $this->prepareJsonResponse([$contact]);
     }
+
     /**
      * @param Contact[] $contacts
      */
     public function prepareJsonResponse(array $contacts): JsonResponse
     {
+        $normalizeDateTimeToDate = function ($innerObject) {
+            if (!$innerObject instanceof \DateTimeInterface) {
+                // @codeCoverageIgnoreStart
+                return null;
+                // @codeCoverageIgnoreEnd
+            }
+
+            return $innerObject->format('Y-m-d');
+        };
+
         return $this->json($this->serializer->normalize(
             $contacts,
             null,
-            [AbstractNormalizer::IGNORED_ATTRIBUTES => ['user']]
+            [
+                AbstractNormalizer::IGNORED_ATTRIBUTES => ['user', 'events'],
+                AbstractNormalizer::CALLBACKS => [
+                    'birthday' => $normalizeDateTimeToDate,
+                    'user' => function($innerObject) {
+                        dump($innerObject);
+                    }
+                ]
+            ]
         ));
     }
 }

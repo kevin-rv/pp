@@ -54,7 +54,7 @@ class EventController extends BaseController
             return $this->json(['error' => 'Not Found'], 404);
         }
 
-        $event = new event();
+        $event = new Event();
 
         $event->update($request->request->all());
         $event->setPlanning($planning);
@@ -140,7 +140,7 @@ class EventController extends BaseController
                 // @codeCoverageIgnoreEnd
             }
 
-            return $innerObject->format('Y-m-d');
+            return $innerObject->format(DATE_ATOM);
         };
 
         return $this->json($this->serializer->normalize(
