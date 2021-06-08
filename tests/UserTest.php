@@ -4,9 +4,8 @@ namespace App\Tests;
 
 use Faker\Factory;
 use Faker\Generator;
-use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
-class UserTest extends WebTestCase
+class UserTest extends AbstractAuthenticatedTest
 {
     /**
      * @var Generator
@@ -122,11 +121,21 @@ class UserTest extends WebTestCase
         $client->request('POST', '/user', $userData);
         $this->assertResponseStatusCodeSame(200);
 
-        $client->request(
+
+        $user = json_decode($this->client->getResponse()->getContent(), true);
+        $this->authenticatedClient->request(
             'GET',
-            '/user'
+            $this->urlGenerator->generate(
+                'user_view',
+                ['userId' => $user[0]['id']]
+            )
         );
         $this->assertResponseStatusCodeSame(200);
+//        $client->request(
+//            'GET',
+//            '/user'
+//        );
+//        $this->assertResponseStatusCodeSame(200);
     }
 
     /**

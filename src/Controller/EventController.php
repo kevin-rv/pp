@@ -68,7 +68,7 @@ class EventController extends BaseController
     /**
      * @Route("/planning/{planningId}/event", name="event_list", methods={"GET"})
      */
-    public function getAllEvent(int $planningId): Response
+    public function getAllEvents(int $planningId): Response
     {
         $planning = $this->planningRepository->findOneBy(['user' => $this->getUser(), 'id' => $planningId]);
 
