@@ -194,6 +194,7 @@ class Contact
 
         return $this;
     }
+
     /**
      * @return Collection|Event[]
      */

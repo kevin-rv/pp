@@ -4,56 +4,66 @@ namespace App\Tests;
 
 use Faker\Factory;
 use Faker\Generator;
+use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
-class UserTest extends AbstractAuthenticatedTest
+class UserTest extends WebTestCase
 {
     /**
      * @var Generator
      */
     private $faker;
+    private $urlGenerator;
+
+    /**
+     * @var array
+     */
+    private $tokens;
 
     public function setUp(): void
     {
         parent::setUp();
         $this->faker = Factory::create('fr_FR');
+//        $clientAuth = $client->request->['HTTP_Authorization'] $this->tokens[$this->userKey];
     }
 
-    public function getValidUserData(): array
+    public function getRandomUserData(): array
     {
         $this->faker = Factory::create('fr_FR');
 
         return [
-            [
-                [
-                    'email' => $this->faker->email,
-                    'password' => 'password',
-                    'birthday' => $this->faker->date(),
-                    'name' => $this->faker->name,
-                    'phoneNumber' => $this->faker->phoneNumber,
-                ],
-            ],
+            'email' => $this->faker->email,
+            'password' => 'password',
+            'birthday' => $this->faker->date(),
+            'home' => $this->faker->address,
+            'work' => $this->faker->jobTitle,
+            'name' => $this->faker->name,
+            'phoneNumber' => $this->faker->phoneNumber,
         ];
     }
 
-    /**
-     * @dataProvider getValidUserData
-     */
-    public function testCreateWithGoodValuesCreateUser($userData): void
+    public function testCreateWithGoodValuesCreateUser(): void
     {
         $client = static::createClient();
-        $client->request('POST', '/user', $userData);
+        $client->request('POST', '/user', $this->getRandomUserData());
 
         $this->assertResponseIsSuccessful();
     }
 
-    /**
-     * @dataProvider getValidUserData
-     */
-    public function testCreateWithBadBirthdayReturn400($userData): void
+
+    public function testCreateWithBadBirthdayReturn400(): void
     {
-        $userData['birthday'] = 'bonjour';
+        $BadValue = [
+            'email' => $this->faker->email,
+            'password' => 'password',
+            'birthday' => 'bonjour',
+            'home' => $this->faker->address,
+            'work' => $this->faker->jobTitle,
+            'name' => $this->faker->name,
+            'phoneNumber' => $this->faker->phoneNumber,
+        ];
+
         $client = static::createClient();
-        $client->request('POST', '/user', $userData);
+        $client->request('POST', '/user', $BadValue);
 
         $this->assertResponseStatusCodeSame(400);
 
@@ -63,14 +73,20 @@ class UserTest extends AbstractAuthenticatedTest
         $this->assertEquals('birthday MUST to be in format yyyy-mm-dd', $response['error']);
     }
 
-    /**
-     * @dataProvider getValidUserData
-     */
-    public function testCreateWithBadEmailReturn400($userData): void
+    public function testCreateWithBadEmailReturn400(): void
     {
-        $userData['email'] = 'bad email dzedzed dezdze';
+        $BadValue =[
+           'email' => 'Bad Email',
+           'password' => 'password',
+           'birthday' => $this->faker->date(),
+           'home' => $this->faker->address,
+           'work' => $this->faker->jobTitle,
+           'name' => $this->faker->name,
+           'phoneNumber' => $this->faker->phoneNumber,
+        ] ;
+
         $client = static::createClient();
-        $client->request('POST', '/user', $userData);
+        $client->request('POST', '/user', $BadValue);
 
         $this->assertResponseStatusCodeSame(400);
 
@@ -80,14 +96,20 @@ class UserTest extends AbstractAuthenticatedTest
         $this->assertEquals('email MUST to be a valid email', $response['error']);
     }
 
-    /**
-     * @dataProvider getValidUserData
-     */
-    public function testCreateWithBadPhoneNumberReturn400($userData): void
+
+    public function testCreateWithBadPhoneNumberReturn400(): void
     {
-        $userData['phoneNumber'] = 'bad phone number';
+        $BadValue =[
+            'email' => $this->faker->email,
+            'password' => 'password',
+            'birthday' => $this->faker->date(),
+            'home' => $this->faker->address,
+            'work' => $this->faker->jobTitle,
+            'name' => $this->faker->name,
+            'phoneNumber' => 'Bad PhoneNumber',
+        ] ;
         $client = static::createClient();
-        $client->request('POST', '/user', $userData);
+        $client->request('POST', '/user', $BadValue);
 
         $this->assertResponseStatusCodeSame(400);
 
@@ -97,67 +119,73 @@ class UserTest extends AbstractAuthenticatedTest
         $this->assertEquals('phone number MUST match regex format: ^(\+\d{1,4}\s*)?(\(\d{1,5}\))?(\s*\d{1,2}){1,6}$', $response['error']);
     }
 
-    /**
-     * @dataProvider getValidUserData
-     */
-    public function testCreateWithExistingEmailReturn400($userData): void
+    public function testCreateWithExistingEmailReturn400(): void
     {
+        $value =[
+            'email' => '1234@email.com',
+            'password' => 'password',
+            'birthday' => $this->faker->date(),
+            'home' => $this->faker->address,
+            'work' => $this->faker->jobTitle,
+            'name' => $this->faker->name,
+            'phoneNumber' => $this->faker->phoneNumber,
+        ] ;
         $client = static::createClient();
-        $client->request('POST', '/user', $userData);
+        $client->request('POST', '/user', $value);
 
         $this->assertResponseStatusCodeSame(200);
 
-        $client->request('POST', '/user', $userData);
+        $client->request('POST', '/user', $value);
 
         $this->assertResponseStatusCodeSame(400);
     }
 
-    /**
-     * @dataProvider getValidUserData
-     */
-    public function testGetUser($userData)
+
+    public function testGetUser()
     {
         $client = static::createClient();
-        $client->request('POST', '/user', $userData);
+        $client->request('POST', '/user', $this->getRandomUserData());
         $this->assertResponseStatusCodeSame(200);
+        $key = json_decode($this->client->getResponse()->getContent(), true);
+        $client->request('GET', '/user', ['HTTP_Authorization'], $this->tokens[$key]);
 
-
-        $user = json_decode($this->client->getResponse()->getContent(), true);
-        $this->authenticatedClient->request(
-            'GET',
-            $this->urlGenerator->generate(
-                'user_view',
-                ['userId' => $user[0]['id']]
-            )
-        );
         $this->assertResponseStatusCodeSame(200);
-//        $client->request(
-//            'GET',
-//            '/user'
-//        );
-//        $this->assertResponseStatusCodeSame(200);
     }
 
-    /**
-     * @dataProvider getValidUserData
-     */
-    public function testUpdateUser($userData)
+
+    public function testGetUserIsNotConnected()
     {
         $client = static::createClient();
-        $client->request('POST', '/user', $userData);
+        $client->request('POST', '/user', $this->getRandomUserData());
+        $this->assertResponseStatusCodeSame(200);
+
+        $client->request(
+            'GET',
+            $this->urlGenerator->generate(
+                'user_view'
+            )
+        );
+        $this->assertResponseStatusCodeSame(404);
+    }
+
+
+    public function testUpdateUser()
+    {
+        $client = static::createClient();
+        $client->request('POST', '/user', $this->getRandomUserData());
         $this->assertResponseStatusCodeSame(200);
 
         $client->request(
             'PATCH',
-            '/user',
-            $userData
+            $this->urlGenerator->generate(
+                'user_update'
+            ),
+            $this->getRandomUserData()
         );
         $this->assertResponseStatusCodeSame(200);
     }
 
-    /**
-     * @dataProvider getValidUserData
-     */
+
     public function testUpdateWithBadBirthdayReturn400($userData): void
     {
         $client = static::createClient();
@@ -165,17 +193,22 @@ class UserTest extends AbstractAuthenticatedTest
         $this->assertResponseStatusCodeSame(200);
         $response = json_decode($client->getResponse()->getContent(), true);
 
-        $userData['birthday'] = 'bonjour';
-        $client->request('PATCH', '/user', $userData);
+        $userData['birthday'] = 'bonjour'   ;
+        $client->request(
+            'PATCH',
+            $this->urlGenerator->generate(
+                'user_update'
+            ),
+            $userData
+        );
+
         $this->assertResponseStatusCodeSame(400);
 
         $this->assertArrayHasKey('error', $response);
         $this->assertEquals('birthday MUST to be in format yyyy-mm-dd', $response['error']);
     }
 
-    /**
-     * @dataProvider getValidUserData
-     */
+
     public function testUpdateWithBadEmailReturn400($userData): void
     {
         $client = static::createClient();
@@ -184,7 +217,13 @@ class UserTest extends AbstractAuthenticatedTest
         $response = json_decode($client->getResponse()->getContent(), true);
 
         $userData['email'] = 'bad email dzedzed dezdze';
-        $client->request('PATCH', '/user', $userData);
+        $this->authenticatedClient->request(
+            'PATCH',
+            $this->urlGenerator->generate(
+                'user_update'
+            ),
+            $userData
+        );
 
         $this->assertResponseStatusCodeSame(400);
 
@@ -192,9 +231,7 @@ class UserTest extends AbstractAuthenticatedTest
         $this->assertEquals('email MUST to be a valid email', $response['error']);
     }
 
-    /**
-     * @dataProvider getValidUserData
-     */
+
     public function testUpdateWithBadPhoneNumberReturn400($userData): void
     {
         $client = static::createClient();
@@ -203,7 +240,13 @@ class UserTest extends AbstractAuthenticatedTest
         $response = json_decode($client->getResponse()->getContent(), true);
 
         $userData['phoneNumber'] = 'bad phone number';
-        $client->request('PATCH', '/user', $userData);
+        $this->authenticatedClient->request(
+            'PATCH',
+            $this->urlGenerator->generate(
+                'user_update'
+            ),
+            $userData
+        );
 
         $this->assertResponseStatusCodeSame(400);
 
@@ -211,33 +254,53 @@ class UserTest extends AbstractAuthenticatedTest
         $this->assertEquals('phone number MUST match regex format: ^(\+\d{1,4}\s*)?(\(\d{1,5}\))?(\s*\d{1,2}){1,6}$', $response['error']);
     }
 
-    /**
-     * @dataProvider getValidUserData
-     */
-    public function testUpdateWithExistingEmailReturn400($userData): void // a refaire
+    public function testUpdateWithExistingEmailReturn400($userData): void
     {
+        $userData['email'] = '123@email.com';
         $client = static::createClient();
         $client->request('POST', '/user', $userData);
         $this->assertResponseStatusCodeSame(200);
-
-        $client->request('PATCH', '/user', $userData);
+        $userData['email'] = '123@email.com';
+        $this->authenticatedClient->request(
+            'PATCH',
+            $this->urlGenerator->generate(
+                'user_update'
+            ),
+            $userData
+        );
 
         $this->assertResponseStatusCodeSame(400);
     }
 
-    /**
-     * @dataProvider getValidUserData
-     */
+
     public function testDeleteUser($userData)
     {
-        $client = static::createClient();
         $client->request('POST', '/user', $userData);
         $this->assertResponseStatusCodeSame(200);
 
-        $client->request(
+        $this->authenticatedClient->request(
             'DELETE',
-            '/user'
+            $this->urlGenerator->generate(
+                'user_delete'
+            ),
+            $userData
         );
         $this->assertResponseStatusCodeSame(200);
+    }
+
+
+    public function testDeleteUserIsNotConnected($userData)
+    {
+        $client->request('POST', '/user', $userData);
+        $this->assertResponseStatusCodeSame(200);
+
+        $this->client->request(
+            'DELETE',
+            $this->urlGenerator->generate(
+                'user_delete'
+            ),
+            $userData
+        );
+        $this->assertResponseStatusCodeSame(404);
     }
 }

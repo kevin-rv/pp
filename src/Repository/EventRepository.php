@@ -39,7 +39,6 @@ class EventRepository extends ServiceEntityRepository
         $query = $qb->getQuery();
 
         return $query->getOneOrNullResult();
-
     }
 
     /**
@@ -60,6 +59,7 @@ class EventRepository extends ServiceEntityRepository
 
         return $query->getResult();
     }
+
     // /**
     //  * @return Event[] Returns an array of Event objects
     //  */

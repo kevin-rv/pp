@@ -150,7 +150,7 @@ class TaskController extends BaseController
                 AbstractNormalizer::CALLBACKS => [
                     'done' => $normalizeDateTimeToDate,
                     'doneLimitDate' => $normalizeDateTimeToDate,
-                ]
+                ],
             ]
         ));
     }

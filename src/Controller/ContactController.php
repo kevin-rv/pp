@@ -1,6 +1,5 @@
 <?php
 
-
 namespace App\Controller;
 
 use App\Entity\Contact;
@@ -16,7 +15,6 @@ use Symfony\Component\Serializer\SerializerInterface;
 
 class ContactController extends BaseController
 {
-
     /**
      * @var SerializerInterface
      */
@@ -37,6 +35,7 @@ class ContactController extends BaseController
         $this->entityManager = $entityManager;
         $this->contactRepository = $contactRepository;
     }
+
     /**
      * @Route("/contact", name="contact_create", methods={"POST"})
      */
@@ -60,7 +59,6 @@ class ContactController extends BaseController
     {
         return $this->prepareJsonResponse($this->contactRepository->findAllContactByUser($this->getUser()->getId()));
     }
-
 
     /**
      * @Route("/contact/{contactId}", name="contact", methods={"GET"})
@@ -133,10 +131,9 @@ class ContactController extends BaseController
                 AbstractNormalizer::IGNORED_ATTRIBUTES => ['user', 'events'],
                 AbstractNormalizer::CALLBACKS => [
                     'birthday' => $normalizeDateTimeToDate,
-                    'user' => function($innerObject) {
-                        dump($innerObject);
-                    }
-                ]
+                    'user' => function ($innerObject) {
+                    },
+                ],
             ]
         ));
     }

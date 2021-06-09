@@ -54,4 +54,3 @@ class EventFixtures extends Fixture implements DependentFixtureInterface
         ];
     }
 }
-

@@ -41,7 +41,7 @@ class EventTest extends AbstractAuthenticatedTest
 
     public function testCreateEventIsSuccessful()
     {
-        $data =$this->randomEventData();
+        $data = $this->randomEventData();
         $this->authenticatedClient->request(
             'POST',
             $this->urlGenerator->generate('event_create', ['planningId' => self::$userPlanningIds[0]]),
@@ -83,7 +83,6 @@ class EventTest extends AbstractAuthenticatedTest
         $this->assertResponseStatusCodeSame(401);
     }
 
-
     public function testCreateEventFailIfNotUserPlanning()
     {
         $this->authenticatedClient->setUser(0)->request(
@@ -101,7 +100,7 @@ class EventTest extends AbstractAuthenticatedTest
     public function testGetAllEvent()
     {
         $createdEvents = [];
-        for ($i = 0; $i < 2; $i++) {
+        for ($i = 0; $i < 2; ++$i) {
             $this->authenticatedClient->request(
                 'POST',
                 $this->urlGenerator->generate(
@@ -158,7 +157,7 @@ class EventTest extends AbstractAuthenticatedTest
             'GET',
             $this->urlGenerator->generate(
                 'event',
-                ['planningId' => self::$userPlanningIds[0],'eventId' => 0]
+                ['planningId' => self::$userPlanningIds[0], 'eventId' => 0]
             )
         );
 
@@ -190,7 +189,7 @@ class EventTest extends AbstractAuthenticatedTest
 
     public function testGetAllEventIfUserIsNotConnected()
     {
-        for ($i = 0; $i < 2; $i++) {
+        for ($i = 0; $i < 2; ++$i) {
             $this->authenticatedClient->request(
                 'POST',
                 $this->urlGenerator->generate(
@@ -230,7 +229,7 @@ class EventTest extends AbstractAuthenticatedTest
             'GET',
             $this->urlGenerator->generate(
                 'event',
-                ['planningId' => self::$userPlanningIds[0],'eventId' => $event[0]['id']]
+                ['planningId' => self::$userPlanningIds[0], 'eventId' => $event[0]['id']]
             )
         );
         $this->assertResponseStatusCodeSame(404);
@@ -238,7 +237,7 @@ class EventTest extends AbstractAuthenticatedTest
 
     public function testGetAllEventFailIfNotUserPlanning()
     {
-        for ($i = 0; $i < 2; $i++) {
+        for ($i = 0; $i < 2; ++$i) {
             $this->authenticatedClient->setUser(0)->request(
                 'POST',
                 $this->urlGenerator->generate(
@@ -282,7 +281,7 @@ class EventTest extends AbstractAuthenticatedTest
             'PATCH',
             $this->urlGenerator->generate(
                 'event_update',
-                ['planningId' => self::$userPlanningIds[0], 'eventId'  => $event[0]['id']]
+                ['planningId' => self::$userPlanningIds[0], 'eventId' => $event[0]['id']]
             ),
             $newEventData
         );
@@ -297,7 +296,7 @@ class EventTest extends AbstractAuthenticatedTest
             'PATCH',
             $this->urlGenerator->generate(
                 'event_update',
-                ['planningId' => self::$userPlanningIds[0], 'eventId'  => 0]
+                ['planningId' => self::$userPlanningIds[0], 'eventId' => 0]
             ),
             $this->randomEventData()
         );
@@ -324,7 +323,7 @@ class EventTest extends AbstractAuthenticatedTest
             'PATCH',
             $this->urlGenerator->generate(
                 'event_update',
-                ['planningId' => self::$userPlanningIds[0], 'eventId'  => $event[0]['id']]
+                ['planningId' => self::$userPlanningIds[0], 'eventId' => $event[0]['id']]
             ),
             $newEventData
         );
@@ -347,7 +346,7 @@ class EventTest extends AbstractAuthenticatedTest
             'PATCH',
             $this->urlGenerator->generate(
                 'event_update',
-                ['planningId' => self::$userPlanningIds[1], 'eventId'  => $event[0]['id']]
+                ['planningId' => self::$userPlanningIds[1], 'eventId' => $event[0]['id']]
             ),
             $this->randomEventData()
         );
@@ -432,7 +431,7 @@ class EventTest extends AbstractAuthenticatedTest
             'DELETE',
             $this->urlGenerator->generate(
                 'event_delete',
-                ['planningId' => self::$userPlanningIds[0],'eventId' => $event[0]['id']]
+                ['planningId' => self::$userPlanningIds[0], 'eventId' => $event[0]['id']]
             )
         );
         $this->assertResponseStatusCodeSame(404);

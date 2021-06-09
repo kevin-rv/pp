@@ -94,7 +94,7 @@ class PlanningTest extends AbstractAuthenticatedTest
     public function testGetAllCreatedPlanningIsSuccessful()
     {
         $createdPlannings = [];
-        for ($i = 0; $i < 2; $i++) {
+        for ($i = 0; $i < 2; ++$i) {
             $this->authenticatedClient->request(
                 'POST',
                 $this->urlGenerator->generate(
@@ -156,7 +156,7 @@ class PlanningTest extends AbstractAuthenticatedTest
 
     public function testGetAllCreatedPlanningFailUserIsNotConnected()
     {
-        for ($i = 0; $i < 2; $i++) {
+        for ($i = 0; $i < 2; ++$i) {
             $this->authenticatedClient->request(
                 'POST',
                 $this->urlGenerator->generate(
@@ -273,7 +273,7 @@ class PlanningTest extends AbstractAuthenticatedTest
 
     public function testDeletePlanningDoesNotExist()
     {
-//        $this->authenticatedClient->request('DELETE', '/planning/0');
+
         $this->authenticatedClient->request(
             'DELETE',
             $this->urlGenerator->generate(

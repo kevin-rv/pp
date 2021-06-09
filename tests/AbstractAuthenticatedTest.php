@@ -37,12 +37,12 @@ abstract class AbstractAuthenticatedTest extends WebTestCase
 
     public function setUp(): void
     {
+        self::$faker = Factory::create('fr_FR');
+
         $this->client = static::createClient();
         $this->urlGenerator = $this->client->getContainer()->get('router')->getGenerator();
 
         for ($i = 0; count(self::$tokens) < 2; $i++) {
-
-            self::$faker = Factory::create('fr_FR');
 
             $email = self::$faker->email;
             $password = 'password';

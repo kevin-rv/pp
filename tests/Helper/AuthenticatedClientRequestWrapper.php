@@ -1,6 +1,5 @@
 <?php
 
-
 namespace App\Tests\Helper;
 
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;

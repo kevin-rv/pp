@@ -1,7 +1,7 @@
 <?php
 
-
 namespace App\Controller;
+
 use App\Entity\Event;
 use App\Repository\EventRepository;
 use App\Repository\PlanningRepository;
@@ -41,7 +41,6 @@ class EventController extends BaseController
         $this->entityManager = $entityManager;
         $this->eventRepository = $eventRepository;
     }
-
 
     /**
      * @Route("/planning/{planningId}/event", name="event_create", methods={"POST"})
@@ -151,7 +150,7 @@ class EventController extends BaseController
                 AbstractNormalizer::CALLBACKS => [
                     'startDatetime' => $normalizeDateTimeToDate,
                     'endDatetime' => $normalizeDateTimeToDate,
-                ]
+                ],
             ]
         ));
     }

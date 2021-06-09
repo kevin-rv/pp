@@ -45,7 +45,6 @@ class Task
      */
     private $planning;
 
-
     public function getId(): ?int
     {
         return $this->id;
@@ -116,5 +115,4 @@ class Task
 
         return $this;
     }
-
 }

@@ -21,7 +21,6 @@ class ContactRepository extends ServiceEntityRepository
         parent::__construct($registry, Contact::class);
     }
 
-
     /**
      * @return Contact|null Returns an Contact object
      */
@@ -39,7 +38,6 @@ class ContactRepository extends ServiceEntityRepository
         $query = $qb->getQuery();
 
         return $query->getOneOrNullResult();
-
     }
 
     /**

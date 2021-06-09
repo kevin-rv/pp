@@ -48,15 +48,14 @@ class Event
     private $endDatetime;
 
     /**
-     * @ORM\ManyToOne(targetEntity=Planning::class, inversedBy="event")
+     * @ORM\ManyToOne(targetEntity=Planning::class, inversedBy="events")
      */
     private $planning;
 
     /**
-     * @ORM\ManyToMany(targetEntity=Contact::class, mappedBy="event")
+     * @ORM\ManyToMany(targetEntity=Contact::class, mappedBy="events")
      */
     private $contacts;
-
 
     public function __construct()
     {
@@ -174,4 +173,3 @@ class Event
         return $this;
     }
 }
-

@@ -14,15 +14,13 @@ class ContactTest extends AbstractAuthenticatedTest
             'email' => self::$faker->email,
             'relationship' => self::$faker->word,
             'work' => self::$faker->jobTitle,
-
         ];
     }
-
 
     // CREATE
     public function testCreateContactIsSuccessful()
     {
-        $data =$this->randomContactData();
+        $data = $this->randomContactData();
         $this->authenticatedClient->request(
             'POST',
             $this->urlGenerator->generate('contact_create'),
@@ -71,7 +69,7 @@ class ContactTest extends AbstractAuthenticatedTest
     public function testGetAllContact()
     {
         $createdContacts = [];
-        for ($i = 0; $i < 2; $i++) {
+        for ($i = 0; $i < 2; ++$i) {
             $this->authenticatedClient->request(
                 'POST',
                 $this->urlGenerator->generate(
@@ -153,9 +151,10 @@ class ContactTest extends AbstractAuthenticatedTest
         );
         $this->assertResponseStatusCodeSame(401);
     }
+
     public function testGetAllContactFailIfUserIsNotConnected()
     {
-        for ($i = 0; $i < 2; $i++) {
+        for ($i = 0; $i < 2; ++$i) {
             $this->authenticatedClient->request(
                 'POST',
                 $this->urlGenerator->generate(
@@ -219,7 +218,7 @@ class ContactTest extends AbstractAuthenticatedTest
             'PATCH',
             $this->urlGenerator->generate(
                 'contact_update',
-                ['contactId'  => $contact[0]['id']]
+                ['contactId' => $contact[0]['id']]
             ),
             $newContactData
         );
@@ -234,7 +233,7 @@ class ContactTest extends AbstractAuthenticatedTest
             'PATCH',
             $this->urlGenerator->generate(
                 'contact_update',
-                ['contactId'  => 0]
+                ['contactId' => 0]
             ),
             $this->randomContactData()
         );
@@ -260,7 +259,7 @@ class ContactTest extends AbstractAuthenticatedTest
             'PATCH',
             $this->urlGenerator->generate(
                 'contact_update',
-                ['contactId'  => $contact[0]['id']]
+                ['contactId' => $contact[0]['id']]
             ),
             $newContactData
         );
@@ -282,7 +281,7 @@ class ContactTest extends AbstractAuthenticatedTest
             'PATCH',
             $this->urlGenerator->generate(
                 'contact_update',
-                ['contactId'  => $contact[0]['id']]
+                ['contactId' => $contact[0]['id']]
             ),
             $this->randomContactData()
         );
@@ -312,6 +311,7 @@ class ContactTest extends AbstractAuthenticatedTest
         );
         $this->assertResponseStatusCodeSame(200);
     }
+
     public function testDeleteContactDoesNotExist()
     {
         $this->authenticatedClient->request(

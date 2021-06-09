@@ -3,7 +3,6 @@
 namespace App\Controller;
 
 use App\Entity\User;
-use App\Repository\UserRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
@@ -29,7 +28,7 @@ class UserController extends BaseController
     /**
      * @Route("/user", name="user_create", methods={"POST"}, options={"auth": false})
      */
-    public function createSelf(EntityManagerInterface $entityManager, Request $request, UserRepository $userRepository): Response
+    public function createSelf(EntityManagerInterface $entityManager, Request $request): Response
     {
         $user = new User();
         try {
@@ -53,7 +52,7 @@ class UserController extends BaseController
     /**
      * @Route("/user", name="user_update", methods={"PATCH"})
      */
-    public function updateSelf(EntityManagerInterface $entityManager, Request $request, SerializerInterface $serializer): Response
+    public function updateSelf(EntityManagerInterface $entityManager, Request $request): Response
     {
         try {
             $entityManager->persist($this->getUser()->update($request->request->all()));
@@ -68,7 +67,7 @@ class UserController extends BaseController
     /**
      * @Route("/user", name="user_delete", methods={"DELETE"})
      */
-    public function deleteSelf(EntityManagerInterface $entityManager, Request $request, SerializerInterface $serializer): Response
+    public function deleteSelf(EntityManagerInterface $entityManager, Request $request): Response
     {
         $entityManager->remove($this->getUser());
         $entityManager->flush();
@@ -78,10 +77,21 @@ class UserController extends BaseController
 
     public function prepareUserJsonResponse(User $user): Response
     {
+        $normalizeDateTimeToDate = function ($innerObject) {
+            if (!$innerObject instanceof \DateTimeInterface) {
+                // @codeCoverageIgnoreStart
+                return null;
+                // @codeCoverageIgnoreEnd
+            }
+
+            return $innerObject->format('Y-m-d');
+        };
+
         return $this->json($this->serializer->normalize(
             $user,
             null,
-            [AbstractNormalizer::ATTRIBUTES => ['email', 'birthday', 'home', 'work', 'phoneNumber', 'name']]
+            [AbstractNormalizer::ATTRIBUTES => ['email', 'birthday', 'home', 'work', 'phoneNumber', 'name'],
+                AbstractNormalizer::CALLBACKS => ['birthday' => $normalizeDateTimeToDate], ]
         ));
     }
 }
