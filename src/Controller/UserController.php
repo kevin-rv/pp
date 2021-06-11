@@ -3,26 +3,28 @@
 namespace App\Controller;
 
 use App\Entity\User;
+use DateTimeInterface;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Serializer\Exception\ExceptionInterface;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
-use Symfony\Component\Serializer\SerializerInterface;
+use Symfony\Component\Serializer\Normalizer\NormalizerInterface;
 use Throwable;
 
 class UserController extends BaseController
 {
     /**
-     * @var SerializerInterface
+     * @var NormalizerInterface
      */
-    private $serializer;
+    private $normalizer;
 
-    public function __construct(RequestStack $requestStack, SerializerInterface $serializer)
+    public function __construct(RequestStack $requestStack, NormalizerInterface $normalizer)
     {
         parent::__construct($requestStack);
-        $this->serializer = $serializer;
+        $this->normalizer = $normalizer;
     }
 
     /**
@@ -75,10 +77,13 @@ class UserController extends BaseController
         return $this->prepareUserJsonResponse($this->getUser());
     }
 
+    /**
+     * @throws ExceptionInterface
+     */
     public function prepareUserJsonResponse(User $user): Response
     {
         $normalizeDateTimeToDate = function ($innerObject) {
-            if (!$innerObject instanceof \DateTimeInterface) {
+            if (!$innerObject instanceof DateTimeInterface) {
                 // @codeCoverageIgnoreStart
                 return null;
                 // @codeCoverageIgnoreEnd
@@ -87,7 +92,7 @@ class UserController extends BaseController
             return $innerObject->format('Y-m-d');
         };
 
-        return $this->json($this->serializer->normalize(
+        return $this->json($this->normalizer->normalize(
             $user,
             null,
             [AbstractNormalizer::ATTRIBUTES => ['email', 'birthday', 'home', 'work', 'phoneNumber', 'name'],

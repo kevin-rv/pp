@@ -16,6 +16,11 @@ use Exception;
  */
 class User
 {
+    public const BIRTHDAY_REGEX = /* @lang RegExp */ '#^\d{4}-\d{2}-\d{2}$#';
+    public const BIRTHDAY_ERROR_MSG = 'birthday MUST to be in format yyyy-mm-dd';
+    public const PHONE_NUMBER_REGEX = /* @lang RegExp */ '#^(\+\d{1,4}\s*)?(\(\d{1,5}\))?(\s*\d{1,2}){1,6}$#';
+    public const PHONE_NUMBER_ERROR_MSG = 'phone number MUST match regex format: '.self::PHONE_NUMBER_REGEX;
+    public const EMAIL_ERROR_MSG = 'email MUST to be a valid email';
     public const FIELDS_MAP = [
         'email',
         'password',
@@ -97,7 +102,7 @@ class User
     public function setEmail(string $email): self
     {
         if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            throw new UnexpectedDataException('email MUST to be a valid email');
+            throw new UnexpectedDataException(self::EMAIL_ERROR_MSG);
         }
 
         $this->email = $email;
@@ -141,8 +146,8 @@ class User
 
     public function setPhoneNumber(?string $phoneNumber): self
     {
-        if (!preg_match('#^(\+\d{1,4}\s*)?(\(\d{1,5}\))?(\s*\d{1,2}){1,6}$#', $phoneNumber)) {
-            throw new UnexpectedDataException('phone number MUST match regex format: ^(\+\d{1,4}\s*)?(\(\d{1,5}\))?(\s*\d{1,2}){1,6}$');
+        if (!preg_match(self::PHONE_NUMBER_REGEX, $phoneNumber)) {
+            throw new UnexpectedDataException(self::PHONE_NUMBER_ERROR_MSG);
         }
 
         $this->phoneNumber = $phoneNumber;
@@ -259,8 +264,8 @@ class User
                 continue;
             }
             if ('birthday' === $key) {
-                if (!preg_match('#^\d{4}-\d{2}-\d{2}$#', $value)) {
-                    throw new UnexpectedDataException('birthday MUST to be in format yyyy-mm-dd');
+                if (!preg_match(self::BIRTHDAY_REGEX, $value)) {
+                    throw new UnexpectedDataException(self::BIRTHDAY_ERROR_MSG);
                 }
                 $value = new DateTime($value);
             }

@@ -10,15 +10,16 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Serializer\Exception\ExceptionInterface;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
-use Symfony\Component\Serializer\SerializerInterface;
+use Symfony\Component\Serializer\Normalizer\NormalizerInterface;
 
 class ContactController extends BaseController
 {
     /**
-     * @var SerializerInterface
+     * @var NormalizerInterface
      */
-    private $serializer;
+    private $normalizer;
     /**
      * @var EntityManagerInterface
      */
@@ -28,10 +29,14 @@ class ContactController extends BaseController
      */
     private $contactRepository;
 
-    public function __construct(RequestStack $requestStack, SerializerInterface $serializer, ContactRepository $contactRepository, EntityManagerInterface $entityManager)
-    {
+    public function __construct(
+        RequestStack $requestStack,
+        NormalizerInterface $normalizer,
+        ContactRepository $contactRepository,
+        EntityManagerInterface $entityManager
+    ) {
         parent::__construct($requestStack);
-        $this->serializer = $serializer;
+        $this->normalizer = $normalizer;
         $this->entityManager = $entityManager;
         $this->contactRepository = $contactRepository;
     }
@@ -111,6 +116,8 @@ class ContactController extends BaseController
 
     /**
      * @param Contact[] $contacts
+     *
+     * @throws ExceptionInterface
      */
     public function prepareJsonResponse(array $contacts): JsonResponse
     {
@@ -124,7 +131,7 @@ class ContactController extends BaseController
             return $innerObject->format('Y-m-d');
         };
 
-        return $this->json($this->serializer->normalize(
+        return $this->json($this->normalizer->normalize(
             $contacts,
             null,
             [

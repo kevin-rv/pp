@@ -11,15 +11,16 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Serializer\Exception\ExceptionInterface;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
-use Symfony\Component\Serializer\SerializerInterface;
+use Symfony\Component\Serializer\Normalizer\NormalizerInterface;
 
 class EventController extends BaseController
 {
     /**
-     * @var SerializerInterface
+     * @var NormalizerInterface
      */
-    private $serializer;
+    private $normalizer;
     /**
      * @var PlanningRepository
      */
@@ -33,10 +34,15 @@ class EventController extends BaseController
      */
     private $eventRepository;
 
-    public function __construct(RequestStack $requestStack, SerializerInterface $serializer, EventRepository $eventRepository, PlanningRepository $planningRepository, EntityManagerInterface $entityManager)
-    {
+    public function __construct(
+        RequestStack $requestStack,
+        NormalizerInterface $normalizer,
+        EventRepository $eventRepository,
+        PlanningRepository $planningRepository,
+        EntityManagerInterface $entityManager
+    ) {
         parent::__construct($requestStack);
-        $this->serializer = $serializer;
+        $this->normalizer = $normalizer;
         $this->planningRepository = $planningRepository;
         $this->entityManager = $entityManager;
         $this->eventRepository = $eventRepository;
@@ -129,6 +135,8 @@ class EventController extends BaseController
 
     /**
      * @param Event[] $events
+     *
+     * @throws ExceptionInterface
      */
     public function prepareJsonResponse(array $events): JsonResponse
     {
@@ -142,7 +150,7 @@ class EventController extends BaseController
             return $innerObject->format(DATE_ATOM);
         };
 
-        return $this->json($this->serializer->normalize(
+        return $this->json($this->normalizer->normalize(
             $events,
             null,
             [
