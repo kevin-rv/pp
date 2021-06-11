@@ -42,8 +42,7 @@ abstract class AbstractAuthenticatedTest extends WebTestCase
         $this->client = static::createClient();
         $this->urlGenerator = $this->client->getContainer()->get('router')->getGenerator();
 
-        for ($i = 0; count(self::$tokens) < 2; $i++) {
-
+        for ($i = 0; count(self::$tokens) < 2; ++$i) {
             $email = self::$faker->email;
             $password = 'password';
 

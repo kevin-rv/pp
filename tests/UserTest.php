@@ -12,18 +12,11 @@ class UserTest extends WebTestCase
      * @var Generator
      */
     private $faker;
-    private $urlGenerator;
-
-    /**
-     * @var array
-     */
-    private $tokens;
 
     public function setUp(): void
     {
         parent::setUp();
         $this->faker = Factory::create('fr_FR');
-//        $clientAuth = $client->request->['HTTP_Authorization'] $this->tokens[$this->userKey];
     }
 
     public function getRandomUserData(): array
@@ -48,7 +41,6 @@ class UserTest extends WebTestCase
 
         $this->assertResponseIsSuccessful();
     }
-
 
     public function testCreateWithBadBirthdayReturn400(): void
     {
@@ -75,7 +67,7 @@ class UserTest extends WebTestCase
 
     public function testCreateWithBadEmailReturn400(): void
     {
-        $BadValue =[
+        $BadValue = [
            'email' => 'Bad Email',
            'password' => 'password',
            'birthday' => $this->faker->date(),
@@ -83,7 +75,7 @@ class UserTest extends WebTestCase
            'work' => $this->faker->jobTitle,
            'name' => $this->faker->name,
            'phoneNumber' => $this->faker->phoneNumber,
-        ] ;
+        ];
 
         $client = static::createClient();
         $client->request('POST', '/user', $BadValue);
@@ -96,10 +88,9 @@ class UserTest extends WebTestCase
         $this->assertEquals('email MUST to be a valid email', $response['error']);
     }
 
-
     public function testCreateWithBadPhoneNumberReturn400(): void
     {
-        $BadValue =[
+        $BadValue = [
             'email' => $this->faker->email,
             'password' => 'password',
             'birthday' => $this->faker->date(),
@@ -107,7 +98,7 @@ class UserTest extends WebTestCase
             'work' => $this->faker->jobTitle,
             'name' => $this->faker->name,
             'phoneNumber' => 'Bad PhoneNumber',
-        ] ;
+        ];
         $client = static::createClient();
         $client->request('POST', '/user', $BadValue);
 
@@ -121,37 +112,36 @@ class UserTest extends WebTestCase
 
     public function testCreateWithExistingEmailReturn400(): void
     {
-        $value =[
-            'email' => '1234@email.com',
-            'password' => 'password',
-            'birthday' => $this->faker->date(),
-            'home' => $this->faker->address,
-            'work' => $this->faker->jobTitle,
-            'name' => $this->faker->name,
-            'phoneNumber' => $this->faker->phoneNumber,
-        ] ;
-        $client = static::createClient();
-        $client->request('POST', '/user', $value);
+        $data = $this->getRandomUserData();
+        $data2 = $this->getRandomUserData();
+        $data2['email'] = $data['email'];
 
+        $client = static::createClient();
+
+        $client->request('POST', '/user', $data);
         $this->assertResponseStatusCodeSame(200);
 
-        $client->request('POST', '/user', $value);
-
+        $client->request('POST', '/user', $data2);
         $this->assertResponseStatusCodeSame(400);
     }
 
-
-    public function testGetUser()
+    public function testGetExistingUser()
     {
+        $data = $this->getRandomUserData();
         $client = static::createClient();
-        $client->request('POST', '/user', $this->getRandomUserData());
+        $client->request('POST', '/user', $data);
         $this->assertResponseStatusCodeSame(200);
-        $key = json_decode($this->client->getResponse()->getContent(), true);
-        $client->request('GET', '/user', ['HTTP_Authorization'], $this->tokens[$key]);
 
+        $client->request('POST', '/auth', [
+            'email' => $data['email'],
+            'password' => $data['password'],
+        ]);
+
+        $token = json_decode($client->getResponse()->getContent(), true);
+
+        $client->request('GET', '/user', [], [], ['HTTP_Authorization' => "Bearer $token"]);
         $this->assertResponseStatusCodeSame(200);
     }
-
 
     public function testGetUserIsNotConnected()
     {
@@ -159,148 +149,155 @@ class UserTest extends WebTestCase
         $client->request('POST', '/user', $this->getRandomUserData());
         $this->assertResponseStatusCodeSame(200);
 
-        $client->request(
-            'GET',
-            $this->urlGenerator->generate(
-                'user_view'
-            )
-        );
-        $this->assertResponseStatusCodeSame(404);
+        $client->request('GET', '/user');
+        $this->assertResponseStatusCodeSame(401);
     }
-
 
     public function testUpdateUser()
     {
+        $data = $this->getRandomUserData();
         $client = static::createClient();
-        $client->request('POST', '/user', $this->getRandomUserData());
+        $client->request('POST', '/user', $data);
         $this->assertResponseStatusCodeSame(200);
 
-        $client->request(
-            'PATCH',
-            $this->urlGenerator->generate(
-                'user_update'
-            ),
-            $this->getRandomUserData()
-        );
+        $client->request('POST', '/auth', [
+            'email' => $data['email'],
+            'password' => $data['password'],
+        ]);
+        $token = json_decode($client->getResponse()->getContent(), true);
+        $client->request('PATCH', '/user', $this->getRandomUserData(), [], ['HTTP_Authorization' => "Bearer $token"]);
+
         $this->assertResponseStatusCodeSame(200);
     }
 
-
-    public function testUpdateWithBadBirthdayReturn400($userData): void
+    public function testUpdateWithBadBirthdayReturn400(): void
     {
+        $data = $this->getRandomUserData();
         $client = static::createClient();
-        $client->request('POST', '/user', $userData);
+        $client->request('POST', '/user', $data);
         $this->assertResponseStatusCodeSame(200);
-        $response = json_decode($client->getResponse()->getContent(), true);
 
-        $userData['birthday'] = 'bonjour'   ;
-        $client->request(
-            'PATCH',
-            $this->urlGenerator->generate(
-                'user_update'
-            ),
-            $userData
-        );
+        $client->request('POST', '/auth', [
+            'email' => $data['email'],
+            'password' => $data['password'],
+        ]);
+
+        $data['birthday'] = 'bonjour';
+
+        $token = json_decode($client->getResponse()->getContent(), true);
+
+        $client->request('PATCH', '/user', $data, [], ['HTTP_Authorization' => "Bearer $token"]);
 
         $this->assertResponseStatusCodeSame(400);
-
+        $response = json_decode($client->getResponse()->getContent(), true);
         $this->assertArrayHasKey('error', $response);
         $this->assertEquals('birthday MUST to be in format yyyy-mm-dd', $response['error']);
     }
 
-
-    public function testUpdateWithBadEmailReturn400($userData): void
+    public function testUpdateWithBadEmailReturn400(): void
     {
+        $data = $this->getRandomUserData();
         $client = static::createClient();
-        $client->request('POST', '/user', $userData);
+        $client->request('POST', '/user', $data);
         $this->assertResponseStatusCodeSame(200);
-        $response = json_decode($client->getResponse()->getContent(), true);
 
-        $userData['email'] = 'bad email dzedzed dezdze';
-        $this->authenticatedClient->request(
-            'PATCH',
-            $this->urlGenerator->generate(
-                'user_update'
-            ),
-            $userData
-        );
+        $client->request('POST', '/auth', [
+            'email' => $data['email'],
+            'password' => $data['password'],
+        ]);
+
+        $token = json_decode($client->getResponse()->getContent(), true);
+        $data['email'] = 'bad email dzedzed dezdze';
+        $client->request('PATCH', '/user', $data, [], ['HTTP_Authorization' => "Bearer $token"]);
 
         $this->assertResponseStatusCodeSame(400);
-
+        $response = json_decode($client->getResponse()->getContent(), true);
         $this->assertArrayHasKey('error', $response);
         $this->assertEquals('email MUST to be a valid email', $response['error']);
     }
 
-
-    public function testUpdateWithBadPhoneNumberReturn400($userData): void
+    public function testUpdateWithBadPhoneNumberReturn400(): void
     {
+        $data = $this->getRandomUserData();
         $client = static::createClient();
-        $client->request('POST', '/user', $userData);
+        $client->request('POST', '/user', $data);
         $this->assertResponseStatusCodeSame(200);
-        $response = json_decode($client->getResponse()->getContent(), true);
 
-        $userData['phoneNumber'] = 'bad phone number';
-        $this->authenticatedClient->request(
-            'PATCH',
-            $this->urlGenerator->generate(
-                'user_update'
-            ),
-            $userData
-        );
+        $client->request('POST', '/auth', [
+            'email' => $data['email'],
+            'password' => $data['password'],
+        ]);
+        $token = json_decode($client->getResponse()->getContent(), true);
+        $data['phoneNumber'] = 'bad phone number';
+        $client->request('PATCH', '/user', $data, [], ['HTTP_Authorization' => "Bearer $token"]);
 
         $this->assertResponseStatusCodeSame(400);
-
+        $response = json_decode($client->getResponse()->getContent(), true);
         $this->assertArrayHasKey('error', $response);
         $this->assertEquals('phone number MUST match regex format: ^(\+\d{1,4}\s*)?(\(\d{1,5}\))?(\s*\d{1,2}){1,6}$', $response['error']);
     }
 
-    public function testUpdateWithExistingEmailReturn400($userData): void
+    public function testUpdateWithExistingEmailReturn400(): void
     {
-        $userData['email'] = '123@email.com';
+        $data = $this->getRandomUserData();
+        $data2 = $this->getRandomUserData();
+        $data3 = $this->getRandomUserData();
+        $data2['email'] = $data['email'];
+
         $client = static::createClient();
-        $client->request('POST', '/user', $userData);
+        $client->request('POST', '/user', $data);
         $this->assertResponseStatusCodeSame(200);
-        $userData['email'] = '123@email.com';
-        $this->authenticatedClient->request(
-            'PATCH',
-            $this->urlGenerator->generate(
-                'user_update'
-            ),
-            $userData
-        );
+
+        $client->request('POST', '/auth', [
+            'email' => $data['email'],
+            'password' => $data['password'],
+        ]);
+        $token1 = json_decode($client->getResponse()->getContent(), true);
+
+        $client->request('GET', '/user', [], [], ['HTTP_Authorization' => "Bearer $token1"]);
+
+        $this->assertResponseStatusCodeSame(200);
+
+        $client->request('POST', '/user', $data3);
+        $this->assertResponseStatusCodeSame(200);
+
+        $client->request('POST', '/auth', [
+            'email' => $data3['email'],
+            'password' => $data3['password'],
+        ]);
+        $token2 = json_decode($client->getResponse()->getContent(), true);
+
+        $client->request('PATCH', '/user', $data2, [], ['HTTP_Authorization' => "Bearer $token2"]);
 
         $this->assertResponseStatusCodeSame(400);
     }
 
-
-    public function testDeleteUser($userData)
+    public function testDeleteUser()
     {
-        $client->request('POST', '/user', $userData);
+        $data = $this->getRandomUserData();
+        $client = static::createClient();
+        $client->request('POST', '/user', $data);
         $this->assertResponseStatusCodeSame(200);
 
-        $this->authenticatedClient->request(
-            'DELETE',
-            $this->urlGenerator->generate(
-                'user_delete'
-            ),
-            $userData
-        );
+        $client->request('POST', '/auth', [
+            'email' => $data['email'],
+            'password' => $data['password'],
+        ]);
+        $token = json_decode($client->getResponse()->getContent(), true);
+        $client->request('DELETE', '/user', [], [], ['HTTP_Authorization' => "Bearer $token"]);
+
         $this->assertResponseStatusCodeSame(200);
     }
 
-
-    public function testDeleteUserIsNotConnected($userData)
+    public function testDeleteUserIsNotConnected()
     {
-        $client->request('POST', '/user', $userData);
+        $data = $this->getRandomUserData();
+        $client = static::createClient();
+        $client->request('POST', '/user', $data);
         $this->assertResponseStatusCodeSame(200);
 
-        $this->client->request(
-            'DELETE',
-            $this->urlGenerator->generate(
-                'user_delete'
-            ),
-            $userData
-        );
-        $this->assertResponseStatusCodeSame(404);
+        $client->request('DELETE', '/user');
+
+        $this->assertResponseStatusCodeSame(401);
     }
 }

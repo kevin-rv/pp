@@ -273,7 +273,6 @@ class PlanningTest extends AbstractAuthenticatedTest
 
     public function testDeletePlanningDoesNotExist()
     {
-
         $this->authenticatedClient->request(
             'DELETE',
             $this->urlGenerator->generate(
