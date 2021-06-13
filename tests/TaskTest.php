@@ -2,57 +2,31 @@
 
 namespace App\Tests;
 
-class TaskTest extends AbstractAuthenticatedTest
+class TaskTest extends AbstractPlanningRequiredTest
 {
-    /**
-     * @var int[]
-     */
-    private static $userPlanningIds = [];
-
-    public function setUp(): void
-    {
-        parent::setUp();
-        foreach (self::$tokens as $k => $token) {
-            $this->authenticatedClient->setUser($k)->request('POST', '/planning', $this->randomPlanningData());
-            if (!$this->client->getResponse()->isSuccessful()) {
-                $this->markTestIncomplete(sprintf('Fail to instanciate planning for user %s', $k));
-            }
-            $plannings = json_decode($this->client->getResponse()->getContent(), true);
-            self::$userPlanningIds[] = $plannings[0]['id'];
-        }
-        $this->authenticatedClient->setUser(0);
-    }
-
     private function randomTaskData(): array
     {
         return [
-            'shortDescription' => self::$faker->text,
-            'done' => self::$faker->date(),
-            'doneLimitDate' => self::$faker->date(),
+            'shortDescription' => $this->faker->text,
+            'done' => $this->faker->date(),
+            'doneLimitDate' => $this->faker->date(),
         ];
     }
 
-    private function randomPlanningData(): array
-    {
-        return ['name' => self::$faker->words(5, true)];
-    }
-
-    // CREATE
     public function testCreateTaskIsSuccessful()
     {
         $data = $this->randomTaskData();
         $this->authenticatedClient->request(
             'POST',
-            $this->urlGenerator->generate('task_create', ['planningId' => self::$userPlanningIds[0]]),
+            $this->urlGenerator->generate('task_create', ['planningId' => $this->userPlanningIds[0]]),
             $data
         );
 
         $this->assertResponseIsSuccessful();
-        $task = json_decode($this->client->getResponse()->getContent(), true)[0];
+        $task = json_decode($this->client->getResponse()->getContent(), true);
+        $data['id'] = $task['id'];
 
-        self::assertEquals($data['shortDescription'], $task['shortDescription']);
-        self::assertEquals($data['done'], $task['done']);
-        self::assertEquals($data['doneLimitDate'], $task['doneLimitDate']);
+        self::assertEquals($data, $task);
     }
 
     public function testCreateTaskPlanningNotExist()
@@ -65,6 +39,7 @@ class TaskTest extends AbstractAuthenticatedTest
             ),
             $this->randomTaskData()
         );
+
         $this->assertResponseStatusCodeSame(404);
     }
 
@@ -74,10 +49,11 @@ class TaskTest extends AbstractAuthenticatedTest
             'POST',
             $this->urlGenerator->generate(
                 'task_create',
-                ['planningId' => self::$userPlanningIds[0]]
+                ['planningId' => $this->userPlanningIds[0]]
             ),
             $this->randomTaskData()
         );
+
         $this->assertResponseStatusCodeSame(401);
     }
 
@@ -87,14 +63,13 @@ class TaskTest extends AbstractAuthenticatedTest
             'POST',
             $this->urlGenerator->generate(
                 'task_create',
-                ['planningId' => self::$userPlanningIds[1]]
+                ['planningId' => $this->userPlanningIds[1]]
             ),
             $this->randomTaskData()
         );
         $this->assertResponseStatusCodeSame(404);
     }
 
-    // GET
     public function testGetAllTask()
     {
         $createdTasks = [];
@@ -103,19 +78,19 @@ class TaskTest extends AbstractAuthenticatedTest
                 'POST',
                 $this->urlGenerator->generate(
                     'task_create',
-                    ['planningId' => self::$userPlanningIds[0]]
+                    ['planningId' => $this->userPlanningIds[0]]
                 ),
                 $this->randomTaskData()
             );
             $this->assertResponseStatusCodeSame(200);
-            $createdTasks[] = json_decode($this->client->getResponse()->getContent(), true)[0];
+            $createdTasks[] = json_decode($this->client->getResponse()->getContent(), true);
         }
 
         $this->authenticatedClient->setUser(0)->request(
             'GET',
             $this->urlGenerator->generate(
                 'task_list',
-                ['planningId' => self::$userPlanningIds[0]]
+                ['planningId' => $this->userPlanningIds[0]]
             )
         );
         $this->assertResponseStatusCodeSame(200);
@@ -132,7 +107,7 @@ class TaskTest extends AbstractAuthenticatedTest
             'POST',
             $this->urlGenerator->generate(
                 'task_create',
-                ['planningId' => self::$userPlanningIds[0]]
+                ['planningId' => $this->userPlanningIds[0]]
             ),
             $this->randomTaskData()
         );
@@ -143,7 +118,7 @@ class TaskTest extends AbstractAuthenticatedTest
             'GET',
             $this->urlGenerator->generate(
                 'task',
-                ['planningId' => self::$userPlanningIds[0], 'taskId' => $task[0]['id']]
+                ['planningId' => $this->userPlanningIds[0], 'taskId' => $task['id']]
             )
         );
         $this->assertResponseStatusCodeSame(200);
@@ -155,7 +130,7 @@ class TaskTest extends AbstractAuthenticatedTest
             'GET',
             $this->urlGenerator->generate(
                 'task',
-                ['planningId' => self::$userPlanningIds[0], 'taskId' => 0]
+                ['planningId' => $this->userPlanningIds[0], 'taskId' => 0]
             )
         );
 
@@ -168,7 +143,7 @@ class TaskTest extends AbstractAuthenticatedTest
             'POST',
             $this->urlGenerator->generate(
                 'task_create',
-                ['planningId' => self::$userPlanningIds[0]]
+                ['planningId' => $this->userPlanningIds[0]]
             ),
             $this->randomTaskData()
         );
@@ -179,7 +154,7 @@ class TaskTest extends AbstractAuthenticatedTest
             'GET',
             $this->urlGenerator->generate(
                 'task',
-                ['planningId' => self::$userPlanningIds[0], 'taskId' => $task[0]['id']]
+                ['planningId' => $this->userPlanningIds[0], 'taskId' => $task['id']]
             )
         );
         $this->assertResponseStatusCodeSame(401);
@@ -192,7 +167,7 @@ class TaskTest extends AbstractAuthenticatedTest
                 'POST',
                 $this->urlGenerator->generate(
                     'task_create',
-                    ['planningId' => self::$userPlanningIds[0]]
+                    ['planningId' => $this->userPlanningIds[0]]
                 ),
                 $this->randomTaskData()
             );
@@ -203,7 +178,7 @@ class TaskTest extends AbstractAuthenticatedTest
             'GET',
             $this->urlGenerator->generate(
                 'task_list',
-                ['planningId' => self::$userPlanningIds[0]]
+                ['planningId' => $this->userPlanningIds[0]]
             )
         );
 
@@ -216,7 +191,7 @@ class TaskTest extends AbstractAuthenticatedTest
             'POST',
             $this->urlGenerator->generate(
                 'task_create',
-                ['planningId' => self::$userPlanningIds[0]]
+                ['planningId' => $this->userPlanningIds[0]]
             ),
             $this->randomTaskData()
         );
@@ -227,7 +202,7 @@ class TaskTest extends AbstractAuthenticatedTest
             'GET',
             $this->urlGenerator->generate(
                 'task',
-                ['planningId' => self::$userPlanningIds[0], 'taskId' => $task[0]['id']]
+                ['planningId' => $this->userPlanningIds[0], 'taskId' => $task['id']]
             )
         );
         $this->assertResponseStatusCodeSame(404);
@@ -240,7 +215,7 @@ class TaskTest extends AbstractAuthenticatedTest
                 'POST',
                 $this->urlGenerator->generate(
                     'task_create',
-                    ['planningId' => self::$userPlanningIds[0]]
+                    ['planningId' => $this->userPlanningIds[0]]
                 ),
                 $this->randomTaskData()
             );
@@ -251,13 +226,11 @@ class TaskTest extends AbstractAuthenticatedTest
             'GET',
             $this->urlGenerator->generate(
                 'task_list',
-                ['planningId' => self::$userPlanningIds[0]]
+                ['planningId' => $this->userPlanningIds[0]]
             )
         );
         $this->assertResponseStatusCodeSame(404);
     }
-
-    // UPDATE
 
     public function testUpdateOneTask()
     {
@@ -265,7 +238,7 @@ class TaskTest extends AbstractAuthenticatedTest
             'POST',
             $this->urlGenerator->generate(
                 'task_create',
-                ['planningId' => self::$userPlanningIds[0]]
+                ['planningId' => $this->userPlanningIds[0]]
             ),
             $this->randomTaskData()
         );
@@ -273,19 +246,19 @@ class TaskTest extends AbstractAuthenticatedTest
 
         $task = json_decode($this->client->getResponse()->getContent(), true);
         $newTaskData = $this->randomTaskData();
-        $newTaskData['id'] = $task[0]['id'];
+        $newTaskData['id'] = $task['id'];
 
         $this->authenticatedClient->request(
             'PATCH',
             $this->urlGenerator->generate(
                 'task_update',
-                ['planningId' => self::$userPlanningIds[0], 'taskId' => $task[0]['id']]
+                ['planningId' => $this->userPlanningIds[0], 'taskId' => $task['id']]
             ),
             $newTaskData
         );
         $this->assertResponseStatusCodeSame(200);
         $task = json_decode($this->client->getResponse()->getContent(), true);
-        self::assertEquals($newTaskData, $task[0]);
+        self::assertEquals($newTaskData, $task);
     }
 
     public function testUpdateTaskDoesNotExist()
@@ -294,7 +267,7 @@ class TaskTest extends AbstractAuthenticatedTest
             'PATCH',
             $this->urlGenerator->generate(
                 'task_update',
-                ['planningId' => self::$userPlanningIds[0], 'taskId' => 0]
+                ['planningId' => $this->userPlanningIds[0], 'taskId' => 0]
             ),
             $this->randomTaskData()
         );
@@ -307,7 +280,7 @@ class TaskTest extends AbstractAuthenticatedTest
             'POST',
             $this->urlGenerator->generate(
                 'task_create',
-                ['planningId' => self::$userPlanningIds[0]]
+                ['planningId' => $this->userPlanningIds[0]]
             ),
             $this->randomTaskData()
         );
@@ -315,17 +288,17 @@ class TaskTest extends AbstractAuthenticatedTest
 
         $task = json_decode($this->client->getResponse()->getContent(), true);
         $value = [
-            'id' => $task[0]['id'],
-            'shortDescription' => self::$faker->text,
-            'done' => self::$faker->date(),
-            'doneLimitDate' => self::$faker->date(),
+            'id' => $task['id'],
+            'shortDescription' => $this->faker->text,
+            'done' => $this->faker->date(),
+            'doneLimitDate' => $this->faker->date(),
         ];
 
         $this->client->request(
             'PATCH',
             $this->urlGenerator->generate(
                 'task_update',
-                ['planningId' => self::$userPlanningIds[0], 'taskId' => $task[0]['id']]
+                ['planningId' => $this->userPlanningIds[0], 'taskId' => $task['id']]
             ),
             ['shortDescription' => $value['shortDescription'], 'done' => $value['done'], 'doneLimitDate' => $value['doneLimitDate']]
         );
@@ -338,7 +311,7 @@ class TaskTest extends AbstractAuthenticatedTest
             'POST',
             $this->urlGenerator->generate(
                 'task_create',
-                ['planningId' => self::$userPlanningIds[0]]
+                ['planningId' => $this->userPlanningIds[0]]
             ),
             $this->randomTaskData()
         );
@@ -349,14 +322,12 @@ class TaskTest extends AbstractAuthenticatedTest
             'PATCH',
             $this->urlGenerator->generate(
                 'task_update',
-                ['planningId' => self::$userPlanningIds[1], 'taskId' => $task[0]['id']]
+                ['planningId' => $this->userPlanningIds[1], 'taskId' => $task['id']]
             ),
             $this->randomTaskData()
         );
         $this->assertResponseStatusCodeSame(404);
     }
-
-    // DELETE
 
     public function testDeleteOneTask()
     {
@@ -364,7 +335,7 @@ class TaskTest extends AbstractAuthenticatedTest
             'POST',
             $this->urlGenerator->generate(
                 'task_create',
-                ['planningId' => self::$userPlanningIds[0]]
+                ['planningId' => $this->userPlanningIds[0]]
             ),
             $this->randomTaskData()
         );
@@ -375,7 +346,7 @@ class TaskTest extends AbstractAuthenticatedTest
             'DELETE',
             $this->urlGenerator->generate(
                 'task_delete',
-                ['planningId' => self::$userPlanningIds[0], 'taskId' => $task[0]['id']]
+                ['planningId' => $this->userPlanningIds[0], 'taskId' => $task['id']]
             )
         );
         $this->assertResponseStatusCodeSame(200);
@@ -387,7 +358,7 @@ class TaskTest extends AbstractAuthenticatedTest
             'DELETE',
             $this->urlGenerator->generate(
                 'task_delete',
-                ['planningId' => self::$userPlanningIds[0], 'taskId' => 0]
+                ['planningId' => $this->userPlanningIds[0], 'taskId' => 0]
             )
         );
 
@@ -400,7 +371,7 @@ class TaskTest extends AbstractAuthenticatedTest
             'POST',
             $this->urlGenerator->generate(
                 'task_create',
-                ['planningId' => self::$userPlanningIds[0]]
+                ['planningId' => $this->userPlanningIds[0]]
             ),
             $this->randomTaskData()
         );
@@ -411,7 +382,7 @@ class TaskTest extends AbstractAuthenticatedTest
             'DELETE',
             $this->urlGenerator->generate(
                 'task_delete',
-                ['planningId' => self::$userPlanningIds[0], 'taskId' => $task[0]['id']]
+                ['planningId' => $this->userPlanningIds[0], 'taskId' => $task['id']]
             )
         );
         $this->assertResponseStatusCodeSame(401);
@@ -423,7 +394,7 @@ class TaskTest extends AbstractAuthenticatedTest
             'POST',
             $this->urlGenerator->generate(
                 'task_create',
-                ['planningId' => self::$userPlanningIds[0]]
+                ['planningId' => $this->userPlanningIds[0]]
             ),
             $this->randomTaskData()
         );
@@ -434,7 +405,7 @@ class TaskTest extends AbstractAuthenticatedTest
             'DELETE',
             $this->urlGenerator->generate(
                 'task_delete',
-                ['planningId' => self::$userPlanningIds[0], 'taskId' => $task[0]['id']]
+                ['planningId' => $this->userPlanningIds[0], 'taskId' => $task['id']]
             )
         );
         $this->assertResponseStatusCodeSame(404);

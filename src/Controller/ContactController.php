@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use App\Entity\Contact;
+use App\Normalizer\Callbacks;
 use App\Repository\ContactRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -17,14 +18,6 @@ use Symfony\Component\Serializer\Normalizer\NormalizerInterface;
 class ContactController extends BaseController
 {
     /**
-     * @var NormalizerInterface
-     */
-    private $normalizer;
-    /**
-     * @var EntityManagerInterface
-     */
-    private $entityManager;
-    /**
      * @var ContactRepository
      */
     private $contactRepository;
@@ -35,9 +28,7 @@ class ContactController extends BaseController
         ContactRepository $contactRepository,
         EntityManagerInterface $entityManager
     ) {
-        parent::__construct($requestStack);
-        $this->normalizer = $normalizer;
-        $this->entityManager = $entityManager;
+        parent::__construct($requestStack, $normalizer, $entityManager);
         $this->contactRepository = $contactRepository;
     }
 
@@ -54,7 +45,7 @@ class ContactController extends BaseController
         $this->entityManager->persist($contact);
         $this->entityManager->flush();
 
-        return $this->prepareJsonResponse([$contact]);
+        return $this->prepareJsonResponse($contact, 201);
     }
 
     /**
@@ -94,7 +85,7 @@ class ContactController extends BaseController
         $this->entityManager->persist($contact);
         $this->entityManager->flush();
 
-        return $this->prepareJsonResponse([$contact]);
+        return $this->prepareJsonResponse($contact);
     }
 
     /**
@@ -111,37 +102,25 @@ class ContactController extends BaseController
         $this->entityManager->remove($contact);
         $this->entityManager->flush();
 
-        return $this->prepareJsonResponse([$contact]);
+        return $this->prepareJsonResponse($contact);
     }
 
     /**
-     * @param Contact[] $contacts
+     * @param Contact[]|Contact $contacts
      *
      * @throws ExceptionInterface
      */
-    public function prepareJsonResponse(array $contacts): JsonResponse
+    public function prepareJsonResponse($contacts, int $status = 200): JsonResponse
     {
-        $normalizeDateTimeToDate = function ($innerObject) {
-            if (!$innerObject instanceof \DateTimeInterface) {
-                // @codeCoverageIgnoreStart
-                return null;
-                // @codeCoverageIgnoreEnd
-            }
-
-            return $innerObject->format('Y-m-d');
-        };
-
         return $this->json($this->normalizer->normalize(
             $contacts,
             null,
             [
                 AbstractNormalizer::IGNORED_ATTRIBUTES => ['user', 'events'],
                 AbstractNormalizer::CALLBACKS => [
-                    'birthday' => $normalizeDateTimeToDate,
-                    'user' => function ($innerObject) {
-                    },
+                    'birthday' => Callbacks::DATETIME_TO_DATE,
                 ],
             ]
-        ));
+        ), $status);
     }
 }

@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use App\Entity\Event;
+use App\Normalizer\Callbacks;
 use App\Repository\EventRepository;
 use App\Repository\PlanningRepository;
 use Doctrine\ORM\EntityManagerInterface;
@@ -18,17 +19,10 @@ use Symfony\Component\Serializer\Normalizer\NormalizerInterface;
 class EventController extends BaseController
 {
     /**
-     * @var NormalizerInterface
-     */
-    private $normalizer;
-    /**
      * @var PlanningRepository
      */
     private $planningRepository;
-    /**
-     * @var EntityManagerInterface
-     */
-    private $entityManager;
+
     /**
      * @var EventRepository
      */
@@ -37,14 +31,12 @@ class EventController extends BaseController
     public function __construct(
         RequestStack $requestStack,
         NormalizerInterface $normalizer,
+        EntityManagerInterface $entityManager,
         EventRepository $eventRepository,
-        PlanningRepository $planningRepository,
-        EntityManagerInterface $entityManager
+        PlanningRepository $planningRepository
     ) {
-        parent::__construct($requestStack);
-        $this->normalizer = $normalizer;
+        parent::__construct($requestStack, $normalizer, $entityManager);
         $this->planningRepository = $planningRepository;
-        $this->entityManager = $entityManager;
         $this->eventRepository = $eventRepository;
     }
 
@@ -67,7 +59,7 @@ class EventController extends BaseController
         $this->entityManager->persist($event);
         $this->entityManager->flush();
 
-        return $this->prepareJsonResponse([$event]);
+        return $this->prepareJsonResponse($event);
     }
 
     /**
@@ -95,7 +87,7 @@ class EventController extends BaseController
             return $this->json(['error' => 'Not Found'], 404);
         }
 
-        return $this->prepareJsonResponse([$event]);
+        return $this->prepareJsonResponse($event);
     }
 
     /**
@@ -113,7 +105,7 @@ class EventController extends BaseController
         $this->entityManager->persist($event);
         $this->entityManager->flush();
 
-        return $this->prepareJsonResponse([$event]);
+        return $this->prepareJsonResponse($event);
     }
 
     /**
@@ -130,34 +122,24 @@ class EventController extends BaseController
         $this->entityManager->remove($event);
         $this->entityManager->flush();
 
-        return $this->prepareJsonResponse([$event]);
+        return $this->prepareJsonResponse($event);
     }
 
     /**
-     * @param Event[] $events
+     * @param Event[]|Event $events
      *
      * @throws ExceptionInterface
      */
-    public function prepareJsonResponse(array $events): JsonResponse
+    public function prepareJsonResponse($events): JsonResponse
     {
-        $normalizeDateTimeToDate = function ($innerObject) {
-            if (!$innerObject instanceof \DateTimeInterface) {
-                // @codeCoverageIgnoreStart
-                return null;
-                // @codeCoverageIgnoreEnd
-            }
-
-            return $innerObject->format(DATE_ATOM);
-        };
-
         return $this->json($this->normalizer->normalize(
             $events,
             null,
             [
                 AbstractNormalizer::IGNORED_ATTRIBUTES => ['planning'],
                 AbstractNormalizer::CALLBACKS => [
-                    'startDatetime' => $normalizeDateTimeToDate,
-                    'endDatetime' => $normalizeDateTimeToDate,
+                    'startDatetime' => Callbacks::DATETIME_ATOMIC,
+                    'endDatetime' => Callbacks::DATETIME_ATOMIC,
                 ],
             ]
         ));

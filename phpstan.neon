@@ -1,0 +1,12 @@
+parameters:
+	level: 6
+	paths:
+		- src
+	ignoreErrors:
+	    -
+	        message: '#Property .+ has no typehint specified#'
+	        path: src/Entity/*
+	    -
+	        message: '#.+ with no value type specified in iterable type array#'
+	        path: src/Entity/*
+	checkGenericClassInNonGenericObjectType: false

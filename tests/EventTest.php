@@ -2,41 +2,17 @@
 
 namespace App\Tests;
 
-class EventTest extends AbstractAuthenticatedTest
+class EventTest extends AbstractPlanningRequiredTest
 {
-    /**
-     * @var int[]
-     */
-    private static $userPlanningIds = [];
-
-    public function setUp(): void
-    {
-        parent::setUp();
-        foreach (self::$tokens as $k => $token) {
-            $this->authenticatedClient->setUser($k)->request('POST', '/planning', $this->randomPlanningData());
-            if (!$this->client->getResponse()->isSuccessful()) {
-                $this->markTestIncomplete(sprintf('Fail to instanciate planning for user %s', $k));
-            }
-            $plannings = json_decode($this->client->getResponse()->getContent(), true);
-            self::$userPlanningIds[] = $plannings[0]['id'];
-        }
-        $this->authenticatedClient->setUser(0);
-    }
-
     private function randomEventData(): array
     {
         return [
-            'shortDescription' => self::$faker->words(3, true),
-            'fullDescription' => self::$faker->text,
-            'startDatetime' => self::$faker->dateTime->format(DATE_ATOM),
-            'endDatetime' => self::$faker->dateTime->format(DATE_ATOM),
+            'shortDescription' => $this->faker->words(3, true),
+            'fullDescription' => $this->faker->text,
+            'startDatetime' => $this->faker->dateTime->format(DATE_ATOM),
+            'endDatetime' => $this->faker->dateTime->format(DATE_ATOM),
             'contacts' => [],
         ];
-    }
-
-    private function randomPlanningData(): array
-    {
-        return ['name' => self::$faker->words(5, true)];
     }
 
     public function testCreateEventIsSuccessful()
@@ -44,17 +20,16 @@ class EventTest extends AbstractAuthenticatedTest
         $data = $this->randomEventData();
         $this->authenticatedClient->request(
             'POST',
-            $this->urlGenerator->generate('event_create', ['planningId' => self::$userPlanningIds[0]]),
+            $this->urlGenerator->generate('event_create', ['planningId' => $this->userPlanningIds[0]]),
             $data
         );
 
         $this->assertResponseIsSuccessful();
-        $event = json_decode($this->client->getResponse()->getContent(), true)[0];
 
-        self::assertEquals($data['shortDescription'], $event['shortDescription']);
-        self::assertEquals($data['fullDescription'], $event['fullDescription']);
-        self::assertEquals($data['startDatetime'], $event['startDatetime']);
-        self::assertEquals($data['endDatetime'], $event['endDatetime']);
+        $event = json_decode($this->client->getResponse()->getContent(), true);
+        $data['id'] = $event['id'];
+
+        self::assertEquals($data, $event);
     }
 
     public function testCreateEventPlanningNotExist()
@@ -76,7 +51,7 @@ class EventTest extends AbstractAuthenticatedTest
             'POST',
             $this->urlGenerator->generate(
                 'event_create',
-                ['planningId' => self::$userPlanningIds[0]]
+                ['planningId' => $this->userPlanningIds[0]]
             ),
             $this->randomEventData()
         );
@@ -89,14 +64,14 @@ class EventTest extends AbstractAuthenticatedTest
             'POST',
             $this->urlGenerator->generate(
                 'event_create',
-                ['planningId' => self::$userPlanningIds[1]]
+                ['planningId' => $this->userPlanningIds[1]]
             ),
             $this->randomEventData()
         );
+
         $this->assertResponseStatusCodeSame(404);
     }
 
-    // GET
     public function testGetAllEvent()
     {
         $createdEvents = [];
@@ -105,19 +80,19 @@ class EventTest extends AbstractAuthenticatedTest
                 'POST',
                 $this->urlGenerator->generate(
                     'event_create',
-                    ['planningId' => self::$userPlanningIds[0]]
+                    ['planningId' => $this->userPlanningIds[0]]
                 ),
                 $this->randomEventData()
             );
             $this->assertResponseStatusCodeSame(200);
-            $createdEvents[] = json_decode($this->client->getResponse()->getContent(), true)[0];
+            $createdEvents[] = json_decode($this->client->getResponse()->getContent(), true);
         }
 
         $this->authenticatedClient->setUser(0)->request(
             'GET',
             $this->urlGenerator->generate(
                 'event_list',
-                ['planningId' => self::$userPlanningIds[0]]
+                ['planningId' => $this->userPlanningIds[0]]
             )
         );
         $this->assertResponseStatusCodeSame(200);
@@ -134,7 +109,7 @@ class EventTest extends AbstractAuthenticatedTest
             'POST',
             $this->urlGenerator->generate(
                 'event_create',
-                ['planningId' => self::$userPlanningIds[0]]
+                ['planningId' => $this->userPlanningIds[0]]
             ),
             $this->randomEventData()
         );
@@ -145,7 +120,7 @@ class EventTest extends AbstractAuthenticatedTest
             'GET',
             $this->urlGenerator->generate(
                 'event',
-                ['planningId' => self::$userPlanningIds[0], 'eventId' => $event[0]['id']]
+                ['planningId' => $this->userPlanningIds[0], 'eventId' => $event['id']]
             )
         );
         $this->assertResponseStatusCodeSame(200);
@@ -157,7 +132,7 @@ class EventTest extends AbstractAuthenticatedTest
             'GET',
             $this->urlGenerator->generate(
                 'event',
-                ['planningId' => self::$userPlanningIds[0], 'eventId' => 0]
+                ['planningId' => $this->userPlanningIds[0], 'eventId' => 0]
             )
         );
 
@@ -170,7 +145,7 @@ class EventTest extends AbstractAuthenticatedTest
             'POST',
             $this->urlGenerator->generate(
                 'event_create',
-                ['planningId' => self::$userPlanningIds[0]]
+                ['planningId' => $this->userPlanningIds[0]]
             ),
             $this->randomEventData()
         );
@@ -181,7 +156,7 @@ class EventTest extends AbstractAuthenticatedTest
             'GET',
             $this->urlGenerator->generate(
                 'event',
-                ['planningId' => self::$userPlanningIds[0], 'eventId' => $event[0]['id']]
+                ['planningId' => $this->userPlanningIds[0], 'eventId' => $event['id']]
             )
         );
         $this->assertResponseStatusCodeSame(401);
@@ -194,7 +169,7 @@ class EventTest extends AbstractAuthenticatedTest
                 'POST',
                 $this->urlGenerator->generate(
                     'event_create',
-                    ['planningId' => self::$userPlanningIds[0]]
+                    ['planningId' => $this->userPlanningIds[0]]
                 ),
                 $this->randomEventData()
             );
@@ -205,7 +180,7 @@ class EventTest extends AbstractAuthenticatedTest
             'GET',
             $this->urlGenerator->generate(
                 'event_list',
-                ['planningId' => self::$userPlanningIds[0]]
+                ['planningId' => $this->userPlanningIds[0]]
             )
         );
 
@@ -218,7 +193,7 @@ class EventTest extends AbstractAuthenticatedTest
             'POST',
             $this->urlGenerator->generate(
                 'event_create',
-                ['planningId' => self::$userPlanningIds[0]]
+                ['planningId' => $this->userPlanningIds[0]]
             ),
             $this->randomEventData()
         );
@@ -229,7 +204,7 @@ class EventTest extends AbstractAuthenticatedTest
             'GET',
             $this->urlGenerator->generate(
                 'event',
-                ['planningId' => self::$userPlanningIds[0], 'eventId' => $event[0]['id']]
+                ['planningId' => $this->userPlanningIds[0], 'eventId' => $event['id']]
             )
         );
         $this->assertResponseStatusCodeSame(404);
@@ -242,7 +217,7 @@ class EventTest extends AbstractAuthenticatedTest
                 'POST',
                 $this->urlGenerator->generate(
                     'event_create',
-                    ['planningId' => self::$userPlanningIds[0]]
+                    ['planningId' => $this->userPlanningIds[0]]
                 ),
                 $this->randomEventData()
             );
@@ -253,13 +228,11 @@ class EventTest extends AbstractAuthenticatedTest
             'GET',
             $this->urlGenerator->generate(
                 'event_list',
-                ['planningId' => self::$userPlanningIds[0]]
+                ['planningId' => $this->userPlanningIds[0]]
             )
         );
         $this->assertResponseStatusCodeSame(404);
     }
-
-    // UPDATE
 
     public function testUpdateOneEvent()
     {
@@ -267,7 +240,7 @@ class EventTest extends AbstractAuthenticatedTest
             'POST',
             $this->urlGenerator->generate(
                 'event_create',
-                ['planningId' => self::$userPlanningIds[0]]
+                ['planningId' => $this->userPlanningIds[0]]
             ),
             $this->randomEventData()
         );
@@ -275,19 +248,19 @@ class EventTest extends AbstractAuthenticatedTest
 
         $event = json_decode($this->client->getResponse()->getContent(), true);
         $newEventData = $this->randomEventData();
-        $newEventData['id'] = $event[0]['id'];
+        $newEventData['id'] = $event['id'];
 
         $this->authenticatedClient->request(
             'PATCH',
             $this->urlGenerator->generate(
                 'event_update',
-                ['planningId' => self::$userPlanningIds[0], 'eventId' => $event[0]['id']]
+                ['planningId' => $this->userPlanningIds[0], 'eventId' => $event['id']]
             ),
             $newEventData
         );
         $this->assertResponseStatusCodeSame(200);
         $event = json_decode($this->client->getResponse()->getContent(), true);
-        self::assertEquals($newEventData, $event[0]);
+        self::assertEquals($newEventData, $event);
     }
 
     public function testUpdateEventDoesNotExist()
@@ -296,7 +269,7 @@ class EventTest extends AbstractAuthenticatedTest
             'PATCH',
             $this->urlGenerator->generate(
                 'event_update',
-                ['planningId' => self::$userPlanningIds[0], 'eventId' => 0]
+                ['planningId' => $this->userPlanningIds[0], 'eventId' => 0]
             ),
             $this->randomEventData()
         );
@@ -309,7 +282,7 @@ class EventTest extends AbstractAuthenticatedTest
             'POST',
             $this->urlGenerator->generate(
                 'event_create',
-                ['planningId' => self::$userPlanningIds[0]]
+                ['planningId' => $this->userPlanningIds[0]]
             ),
             $this->randomEventData()
         );
@@ -317,13 +290,13 @@ class EventTest extends AbstractAuthenticatedTest
 
         $event = json_decode($this->client->getResponse()->getContent(), true);
         $newEventData = $this->randomEventData();
-        $newEventData['id'] = $event[0]['id'];
+        $newEventData['id'] = $event['id'];
 
         $this->client->request(
             'PATCH',
             $this->urlGenerator->generate(
                 'event_update',
-                ['planningId' => self::$userPlanningIds[0], 'eventId' => $event[0]['id']]
+                ['planningId' => $this->userPlanningIds[0], 'eventId' => $event['id']]
             ),
             $newEventData
         );
@@ -335,7 +308,7 @@ class EventTest extends AbstractAuthenticatedTest
             'POST',
             $this->urlGenerator->generate(
                 'event_create',
-                ['planningId' => self::$userPlanningIds[0]]
+                ['planningId' => $this->userPlanningIds[0]]
             ),
             $this->randomEventData()
         );
@@ -346,14 +319,12 @@ class EventTest extends AbstractAuthenticatedTest
             'PATCH',
             $this->urlGenerator->generate(
                 'event_update',
-                ['planningId' => self::$userPlanningIds[1], 'eventId' => $event[0]['id']]
+                ['planningId' => $this->userPlanningIds[1], 'eventId' => $event['id']]
             ),
             $this->randomEventData()
         );
         $this->assertResponseStatusCodeSame(404);
     }
-
-    // DELETE
 
     public function testDeleteOneEvent()
     {
@@ -361,7 +332,7 @@ class EventTest extends AbstractAuthenticatedTest
             'POST',
             $this->urlGenerator->generate(
                 'event_create',
-                ['planningId' => self::$userPlanningIds[0]]
+                ['planningId' => $this->userPlanningIds[0]]
             ),
             $this->randomEventData()
         );
@@ -372,7 +343,7 @@ class EventTest extends AbstractAuthenticatedTest
             'DELETE',
             $this->urlGenerator->generate(
                 'event_delete',
-                ['planningId' => self::$userPlanningIds[0], 'eventId' => $event[0]['id']]
+                ['planningId' => $this->userPlanningIds[0], 'eventId' => $event['id']]
             )
         );
         $this->assertResponseStatusCodeSame(200);
@@ -384,7 +355,7 @@ class EventTest extends AbstractAuthenticatedTest
             'DELETE',
             $this->urlGenerator->generate(
                 'event_delete',
-                ['planningId' => self::$userPlanningIds[0], 'eventId' => 0]
+                ['planningId' => $this->userPlanningIds[0], 'eventId' => 0]
             )
         );
 
@@ -397,7 +368,7 @@ class EventTest extends AbstractAuthenticatedTest
             'POST',
             $this->urlGenerator->generate(
                 'event_create',
-                ['planningId' => self::$userPlanningIds[0]]
+                ['planningId' => $this->userPlanningIds[0]]
             ),
             $this->randomEventData()
         );
@@ -408,7 +379,7 @@ class EventTest extends AbstractAuthenticatedTest
             'DELETE',
             $this->urlGenerator->generate(
                 'event_delete',
-                ['planningId' => self::$userPlanningIds[0], 'eventId' => $event[0]['id']]
+                ['planningId' => $this->userPlanningIds[0], 'eventId' => $event['id']]
             )
         );
         $this->assertResponseStatusCodeSame(401);
@@ -420,7 +391,7 @@ class EventTest extends AbstractAuthenticatedTest
             'POST',
             $this->urlGenerator->generate(
                 'event_create',
-                ['planningId' => self::$userPlanningIds[0]]
+                ['planningId' => $this->userPlanningIds[0]]
             ),
             $this->randomEventData()
         );
@@ -431,7 +402,7 @@ class EventTest extends AbstractAuthenticatedTest
             'DELETE',
             $this->urlGenerator->generate(
                 'event_delete',
-                ['planningId' => self::$userPlanningIds[0], 'eventId' => $event[0]['id']]
+                ['planningId' => $this->userPlanningIds[0], 'eventId' => $event['id']]
             )
         );
         $this->assertResponseStatusCodeSame(404);

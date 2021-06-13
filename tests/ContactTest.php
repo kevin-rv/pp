@@ -7,13 +7,13 @@ class ContactTest extends AbstractAuthenticatedTest
     private function randomContactData(): array
     {
         return [
-            'name' => self::$faker->name,
-            'phoneNumber' => self::$faker->phoneNumber,
-            'home' => self::$faker->address,
-            'birthday' => self::$faker->date(),
-            'email' => self::$faker->email,
-            'relationship' => self::$faker->word,
-            'work' => self::$faker->jobTitle,
+            'name' => $this->faker->name,
+            'phoneNumber' => $this->faker->phoneNumber,
+            'home' => $this->faker->address,
+            'birthday' => $this->faker->date(),
+            'email' => $this->faker->email,
+            'relationship' => $this->faker->word,
+            'work' => $this->faker->jobTitle,
         ];
     }
 
@@ -28,7 +28,7 @@ class ContactTest extends AbstractAuthenticatedTest
         );
 
         $this->assertResponseIsSuccessful();
-        $contact = json_decode($this->client->getResponse()->getContent(), true)[0];
+        $contact = json_decode($this->client->getResponse()->getContent(), true);
 
         self::assertEquals($data['name'], $contact['name']);
         self::assertEquals($data['phoneNumber'], $contact['phoneNumber']);
@@ -77,8 +77,8 @@ class ContactTest extends AbstractAuthenticatedTest
                 ),
                 $this->randomContactData()
             );
-            $this->assertResponseStatusCodeSame(200);
-            $createdContacts[] = json_decode($this->client->getResponse()->getContent(), true)[0];
+            $this->assertResponseIsSuccessful();
+            $createdContacts[] = json_decode($this->client->getResponse()->getContent(), true);
         }
 
         $this->authenticatedClient->request(
@@ -87,7 +87,7 @@ class ContactTest extends AbstractAuthenticatedTest
                 'contact_list'
             )
         );
-        $this->assertResponseStatusCodeSame(200);
+        $this->assertResponseIsSuccessful();
         $allContacts = json_decode($this->client->getResponse()->getContent(), true);
 
         foreach ($createdContacts as $contact) {
@@ -104,17 +104,17 @@ class ContactTest extends AbstractAuthenticatedTest
             ),
             $this->randomContactData()
         );
-        $this->assertResponseStatusCodeSame(200);
+        $this->assertResponseIsSuccessful();
 
         $contact = json_decode($this->client->getResponse()->getContent(), true);
         $this->authenticatedClient->request(
             'GET',
             $this->urlGenerator->generate(
                 'contact',
-                ['contactId' => $contact[0]['id']]
+                ['contactId' => $contact['id']]
             )
         );
-        $this->assertResponseStatusCodeSame(200);
+        $this->assertResponseIsSuccessful();
     }
 
     public function testGetOneContactFailDoesNotExist()
@@ -139,14 +139,14 @@ class ContactTest extends AbstractAuthenticatedTest
             ),
             $this->randomContactData()
         );
-        $this->assertResponseStatusCodeSame(200);
+        $this->assertResponseIsSuccessful();
 
         $contact = json_decode($this->client->getResponse()->getContent(), true);
         $this->client->request(
             'GET',
             $this->urlGenerator->generate(
                 'contact',
-                ['contactId' => $contact[0]['id']]
+                ['contactId' => $contact['id']]
             )
         );
         $this->assertResponseStatusCodeSame(401);
@@ -162,8 +162,8 @@ class ContactTest extends AbstractAuthenticatedTest
                 ),
                 $this->randomContactData()
             );
+            $this->assertResponseIsSuccessful();
         }
-        $this->assertResponseStatusCodeSame(200);
 
         $this->client->request(
             'GET',
@@ -184,14 +184,14 @@ class ContactTest extends AbstractAuthenticatedTest
             ),
             $this->randomContactData()
         );
-        $this->assertResponseStatusCodeSame(200);
+        $this->assertResponseIsSuccessful();
 
         $contact = json_decode($this->client->getResponse()->getContent(), true);
         $this->authenticatedClient->setUser(1)->request(
             'GET',
             $this->urlGenerator->generate(
                 'contact',
-                ['contactId' => $contact[0]['id']]
+                ['contactId' => $contact['id']]
             )
         );
         $this->assertResponseStatusCodeSame(404);
@@ -208,23 +208,24 @@ class ContactTest extends AbstractAuthenticatedTest
             ),
             $this->randomContactData()
         );
-        $this->assertResponseStatusCodeSame(200);
+        $this->assertResponseIsSuccessful();
 
         $contact = json_decode($this->client->getResponse()->getContent(), true);
         $newContactData = $this->randomContactData();
-        $newContactData['id'] = $contact[0]['id'];
+        $newContactData['id'] = $contact['id'];
 
         $this->authenticatedClient->request(
             'PATCH',
             $this->urlGenerator->generate(
                 'contact_update',
-                ['contactId' => $contact[0]['id']]
+                ['contactId' => $contact['id']]
             ),
             $newContactData
         );
-        $this->assertResponseStatusCodeSame(200);
+        $this->assertResponseIsSuccessful();
         $contact = json_decode($this->client->getResponse()->getContent(), true);
-        self::assertEquals($newContactData, $contact[0]);
+
+        self::assertEquals($newContactData, $contact);
     }
 
     public function testUpdateContactFailDoesNotExist()
@@ -249,17 +250,17 @@ class ContactTest extends AbstractAuthenticatedTest
             ),
             $this->randomContactData()
         );
-        $this->assertResponseStatusCodeSame(200);
+        $this->assertResponseIsSuccessful();
 
         $contact = json_decode($this->client->getResponse()->getContent(), true);
         $newContactData = $this->randomContactData();
-        $newContactData['id'] = $contact[0]['id'];
+        $newContactData['id'] = $contact['id'];
 
         $this->client->request(
             'PATCH',
             $this->urlGenerator->generate(
                 'contact_update',
-                ['contactId' => $contact[0]['id']]
+                ['contactId' => $contact['id']]
             ),
             $newContactData
         );
@@ -274,14 +275,14 @@ class ContactTest extends AbstractAuthenticatedTest
             ),
             $this->randomContactData()
         );
-        $this->assertResponseStatusCodeSame(200);
+        $this->assertResponseIsSuccessful();
 
         $contact = json_decode($this->client->getResponse()->getContent(), true);
         $this->authenticatedClient->setUser(1)->request(
             'PATCH',
             $this->urlGenerator->generate(
                 'contact_update',
-                ['contactId' => $contact[0]['id']]
+                ['contactId' => $contact['id']]
             ),
             $this->randomContactData()
         );
@@ -299,17 +300,17 @@ class ContactTest extends AbstractAuthenticatedTest
             ),
             $this->randomContactData()
         );
-        $this->assertResponseStatusCodeSame(200);
+        $this->assertResponseIsSuccessful();
 
         $contact = json_decode($this->client->getResponse()->getContent(), true);
         $this->authenticatedClient->request(
             'DELETE',
             $this->urlGenerator->generate(
                 'contact_delete',
-                ['contactId' => $contact[0]['id']]
+                ['contactId' => $contact['id']]
             )
         );
-        $this->assertResponseStatusCodeSame(200);
+        $this->assertResponseIsSuccessful();
     }
 
     public function testDeleteContactDoesNotExist()
@@ -334,14 +335,14 @@ class ContactTest extends AbstractAuthenticatedTest
             ),
             $this->randomContactData()
         );
-        $this->assertResponseStatusCodeSame(200);
+        $this->assertResponseIsSuccessful();
 
         $contact = json_decode($this->client->getResponse()->getContent(), true);
         $this->client->request(
             'DELETE',
             $this->urlGenerator->generate(
                 'contact_delete',
-                ['contactId' => $contact[0]['id']]
+                ['contactId' => $contact['id']]
             )
         );
         $this->assertResponseStatusCodeSame(401);
@@ -356,14 +357,14 @@ class ContactTest extends AbstractAuthenticatedTest
             ),
             $this->randomContactData()
         );
-        $this->assertResponseStatusCodeSame(200);
+        $this->assertResponseIsSuccessful();
 
         $contact = json_decode($this->client->getResponse()->getContent(), true);
         $this->authenticatedClient->setUser(1)->request(
             'DELETE',
             $this->urlGenerator->generate(
                 'contact_delete',
-                ['contactId' => $contact[0]['id']]
+                ['contactId' => $contact['id']]
             )
         );
         $this->assertResponseStatusCodeSame(404);

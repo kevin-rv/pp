@@ -11,7 +11,7 @@ use Symfony\Component\Routing\Annotation\Route;
 class AccessController extends BaseController
 {
     /**
-     * @Route("/auth", name="auth", methods={"POST"}, options={"auth": false})
+     * @Route("/auth", name="auth_create", methods={"POST"}, options={"auth": false})
      */
     public function auth(Request $request, JWT $jwt, UserRepository $userRepository): Response
     {
@@ -25,5 +25,13 @@ class AccessController extends BaseController
         }
 
         return $this->json($jwt->generateJWT($user));
+    }
+
+    /**
+     * @Route("/auth", name="auth_renew", methods={"PATCH"}, options={"auth": false})
+     */
+    public function authUpdate(Request $request, JWT $jwt, UserRepository $userRepository): Response
+    {
+        return $this->json($jwt->generateJWT($this->getUser()));
     }
 }

@@ -36,6 +36,7 @@
         "doctrine/doctrine-fixtures-bundle": "^3.4",
         "friendsofphp/php-cs-fixer": "^3.0",
         "fzaninotto/faker": "^1.9",
+        "phpstan/phpstan": "^0.12.89",
         "phpunit/phpunit": "^9.5",
         "symfony/css-selector": "^5.2",
         "symfony/maker-bundle": "^1.31",

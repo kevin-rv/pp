@@ -8,9 +8,6 @@ use App\Security\JWT;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 
-/**
- * @codeCoverageIgnore
- */
 class DevController extends BaseController
 {
     /**

@@ -21,7 +21,7 @@ class ContactFixtures extends Fixture implements DependentFixtureInterface
         $this->faker = Factory::create('fr_FR');
     }
 
-    public function load(ObjectManager $manager)
+    public function load(ObjectManager $manager): void
     { //10 contact par utilisateur
         for ($i = $j = 0; $i < 500; ++$i) {
             $contact = new Contact();

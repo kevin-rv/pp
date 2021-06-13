@@ -4,14 +4,12 @@ namespace App\Controller;
 
 use App\Kernel;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
 use Throwable;
 
-/**
- * @codeCoverageIgnore
- */
 class ErrorController extends BaseController
 {
-    public function displayError(Request $request, Kernel $kernel)
+    public function displayError(Request $request, Kernel $kernel): Response
     {
         /** @var Throwable $exception */
         $exception = $request->attributes->get('exception');
@@ -19,8 +17,16 @@ class ErrorController extends BaseController
 
         $responseData = ['error' => $exception->getMessage()];
 
-        if ('dev' !== $kernel->getEnvironment()) {
-            $responseData['stack_trace'] = explode("\n#", $exception->getTraceAsString());
+        if (in_array($kernel->getEnvironment(), ['dev', 'test'])) {
+            try {
+                $stackTrace = $this->normalizer->normalize(
+                    $exception->getTrace()
+                );
+            } catch (Throwable $exception) {
+                $stackTrace = explode("\n", $exception->getTraceAsString());
+            }
+
+            $responseData['stack_trace'] = $stackTrace;
         }
 
         return $this->json($responseData, $statusCode);

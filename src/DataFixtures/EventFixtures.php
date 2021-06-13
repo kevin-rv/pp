@@ -21,7 +21,7 @@ class EventFixtures extends Fixture implements DependentFixtureInterface
         $this->faker = Factory::create('fr_FR');
     }
 
-    public function load(ObjectManager $manager)
+    public function load(ObjectManager $manager): void
     {
         for ($i = $j = $k = 0; $i < 1000; ++$i) {
             $events = new Event();

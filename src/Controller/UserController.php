@@ -3,44 +3,32 @@
 namespace App\Controller;
 
 use App\Entity\User;
-use DateTimeInterface;
+use App\Normalizer\Callbacks;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Serializer\Exception\ExceptionInterface;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
-use Symfony\Component\Serializer\Normalizer\NormalizerInterface;
 use Throwable;
 
 class UserController extends BaseController
 {
     /**
-     * @var NormalizerInterface
-     */
-    private $normalizer;
-
-    public function __construct(RequestStack $requestStack, NormalizerInterface $normalizer)
-    {
-        parent::__construct($requestStack);
-        $this->normalizer = $normalizer;
-    }
-
-    /**
      * @Route("/user", name="user_create", methods={"POST"}, options={"auth": false})
      */
-    public function createSelf(EntityManagerInterface $entityManager, Request $request): Response
+    public function createSelf(Request $request): Response
     {
         $user = new User();
+
         try {
-            $entityManager->persist($user->update($request->request->all()));
-            $entityManager->flush();
+            $this->entityManager->persist($user->update($request->request->all()));
+            $this->entityManager->flush();
         } catch (Throwable $exception) {
             return $this->json(['error' => $exception->getMessage()], 400);
         }
 
-        return $this->prepareUserJsonResponse($user);
+        return $this->prepareJsonResponse($user);
     }
 
     /**
@@ -48,7 +36,7 @@ class UserController extends BaseController
      */
     public function getSelf(): Response
     {
-        return $this->prepareUserJsonResponse($this->getUser());
+        return $this->prepareJsonResponse($this->getUser());
     }
 
     /**
@@ -57,13 +45,13 @@ class UserController extends BaseController
     public function updateSelf(EntityManagerInterface $entityManager, Request $request): Response
     {
         try {
-            $entityManager->persist($this->getUser()->update($request->request->all()));
-            $entityManager->flush();
+            $this->entityManager->persist($this->getUser()->update($request->request->all()));
+            $this->entityManager->flush();
         } catch (Throwable $exception) {
             return $this->json(['error' => $exception->getMessage()], 400);
         }
 
-        return $this->prepareUserJsonResponse($this->getUser());
+        return $this->prepareJsonResponse($this->getUser());
     }
 
     /**
@@ -71,32 +59,26 @@ class UserController extends BaseController
      */
     public function deleteSelf(EntityManagerInterface $entityManager, Request $request): Response
     {
-        $entityManager->remove($this->getUser());
-        $entityManager->flush();
+        $this->entityManager->remove($this->getUser());
+        $this->entityManager->flush();
 
-        return $this->prepareUserJsonResponse($this->getUser());
+        return $this->prepareJsonResponse($this->getUser());
     }
 
     /**
      * @throws ExceptionInterface
      */
-    public function prepareUserJsonResponse(User $user): Response
+    public function prepareJsonResponse(User $user): Response
     {
-        $normalizeDateTimeToDate = function ($innerObject) {
-            if (!$innerObject instanceof DateTimeInterface) {
-                // @codeCoverageIgnoreStart
-                return null;
-                // @codeCoverageIgnoreEnd
-            }
-
-            return $innerObject->format('Y-m-d');
-        };
-
         return $this->json($this->normalizer->normalize(
             $user,
             null,
-            [AbstractNormalizer::ATTRIBUTES => ['email', 'birthday', 'home', 'work', 'phoneNumber', 'name'],
-                AbstractNormalizer::CALLBACKS => ['birthday' => $normalizeDateTimeToDate], ]
+            [
+                AbstractNormalizer::ATTRIBUTES => ['email', 'birthday', 'home', 'work', 'phoneNumber', 'name'],
+                AbstractNormalizer::CALLBACKS => [
+                    'birthday' => Callbacks::DATETIME_TO_DATE,
+                ],
+            ]
         ));
     }
 }

@@ -8,6 +8,7 @@ use Jose\Bundle\JoseFramework\Services\JWEBuilderFactory;
 use Jose\Bundle\JoseFramework\Services\JWEDecrypter;
 use Jose\Bundle\JoseFramework\Services\JWEDecrypterFactory;
 use Jose\Component\Core\JWK;
+use Jose\Component\Encryption\JWE;
 use Jose\Component\Encryption\Serializer\CompactSerializer;
 use Jose\Component\KeyManagement\JWKFactory;
 
@@ -59,8 +60,12 @@ class JWT
         return $key->get('k');
     }
 
-    public function generateJWT(User $user): string
+    public function generateJWT(?User $user): string
     {
+        if (!$user) {
+            $user = new User();
+        }
+
         $payload = json_encode([
             'iat' => time(),
             'nbf' => time(),
@@ -86,7 +91,7 @@ class JWT
         return $this->serializer->serialize($jwe, 0);
     }
 
-    public function decryptToken(string $token)
+    public function decryptToken(string $token): JWE
     {
         $jwe = $this->serializer->unserialize($token);
 

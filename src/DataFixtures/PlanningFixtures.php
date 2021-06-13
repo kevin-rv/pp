@@ -21,7 +21,7 @@ class PlanningFixtures extends Fixture implements DependentFixtureInterface
         $this->faker = Factory::create('fr_FR');
     }
 
-    public function load(ObjectManager $manager)
+    public function load(ObjectManager $manager): void
     {
         for ($i = $j = 0; $i < 100; ++$i) {
             $planning = new Planning();

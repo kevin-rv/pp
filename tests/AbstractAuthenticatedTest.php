@@ -12,14 +12,14 @@ use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 abstract class AbstractAuthenticatedTest extends WebTestCase
 {
     /**
-     * @var array
+     * @var string[]
      */
-    protected static $tokens = [];
+    protected $tokens = [];
 
     /**
      * @var Generator
      */
-    protected static $faker;
+    protected $faker;
 
     /**
      * @var KernelBrowser
@@ -30,6 +30,7 @@ abstract class AbstractAuthenticatedTest extends WebTestCase
      * @var UrlGeneratorInterface
      */
     protected $urlGenerator;
+
     /**
      * @var AuthenticatedClientRequestWrapper
      */
@@ -37,21 +38,20 @@ abstract class AbstractAuthenticatedTest extends WebTestCase
 
     public function setUp(): void
     {
-        self::$faker = Factory::create('fr_FR');
-
+        $this->faker = Factory::create('fr_FR');
         $this->client = static::createClient();
         $this->urlGenerator = $this->client->getContainer()->get('router')->getGenerator();
 
-        for ($i = 0; count(self::$tokens) < 2; ++$i) {
-            $email = self::$faker->email;
+        for ($i = 0; count($this->tokens) < 2; ++$i) {
+            $email = $this->faker->email;
             $password = 'password';
 
             $this->client->request('POST', '/user', [
                 'email' => $email,
                 'password' => $password,
-                'birthday' => self::$faker->date(),
-                'name' => self::$faker->name,
-                'phoneNumber' => self::$faker->phoneNumber,
+                'birthday' => $this->faker->date(),
+                'name' => $this->faker->name,
+                'phoneNumber' => $this->faker->phoneNumber,
             ]);
 
             $this->client->request('POST', '/auth', [
@@ -59,9 +59,9 @@ abstract class AbstractAuthenticatedTest extends WebTestCase
                 'password' => $password,
             ]);
 
-            self::$tokens[$i] = json_decode($this->client->getResponse()->getContent(), true);
+            $this->tokens[$i] = json_decode($this->client->getResponse()->getContent(), true);
         }
 
-        $this->authenticatedClient = new AuthenticatedClientRequestWrapper($this->client, self::$tokens);
+        $this->authenticatedClient = new AuthenticatedClientRequestWrapper($this->client, $this->tokens);
     }
 }

@@ -4,12 +4,18 @@ namespace App\Tests;
 
 class PlanningTest extends AbstractAuthenticatedTest
 {
-    private function randomPlanningData(): array
+    private function randomPlanningData(array $customValues = []): array
     {
-        return ['name' => self::$faker->words(5, true)];
+        $data = ['name' => $this->faker->words(5, true)];
+
+        foreach ($customValues as $key => $value) {
+            $data[$key] = $value;
+        }
+
+        return $data;
     }
 
-    public function testCreatePlanningIsSuccessful()
+    public function testCreatePlanningIsSuccessful(): array
     {
         $this->authenticatedClient->request(
             'POST',
@@ -20,6 +26,8 @@ class PlanningTest extends AbstractAuthenticatedTest
         );
 
         $this->assertResponseIsSuccessful();
+
+        return json_decode($this->client->getResponse()->getContent(), true);
     }
 
     public function testCreatePlanningWithEmptyNameFail()
@@ -27,7 +35,7 @@ class PlanningTest extends AbstractAuthenticatedTest
         $this->authenticatedClient->request(
             'POST',
             $this->urlGenerator->generate('planning_create'),
-            ['name' => '']
+            $this->randomPlanningData(['name' => ''])
         );
 
         $this->assertResponseStatusCodeSame(400);
@@ -46,64 +54,43 @@ class PlanningTest extends AbstractAuthenticatedTest
 
     public function testCreatePlanningWithPlanningNameAlreadyExistMustFailed()
     {
-        $planningData = $this->randomPlanningData();
-        $this->authenticatedClient->request(
-            'POST',
-            $this->urlGenerator->generate(
-                'planning_create'
-            ),
-            $planningData
-        );
-        $this->assertResponseStatusCodeSame(200);
+        $planning = $this->testCreatePlanningIsSuccessful();
 
         $this->authenticatedClient->request(
             'POST',
             $this->urlGenerator->generate(
                 'planning_create'
             ),
-            $planningData
+            $planning
         );
-        $this->assertResponseStatusCodeSame(400);
+
+        $this->assertResponseStatusCodeSame(409);
     }
 
     public function testGetOneCreatedPlanningIsSuccessful()
     {
-        $planningData = $this->randomPlanningData();
-        $this->authenticatedClient->request(
-            'POST',
-            $this->urlGenerator->generate(
-                'planning_create'
-            ),
-            $planningData
-        );
-        $this->assertResponseStatusCodeSame(200);
+        $planningData = $this->testCreatePlanningIsSuccessful();
 
-        $plannings = json_decode($this->client->getResponse()->getContent(), true);
         $this->authenticatedClient->request(
             'GET',
             $this->urlGenerator->generate(
                 'planning',
-                ['planningId' => $plannings[0]['id']]
+                ['planningId' => $planningData['id']]
             )
         );
+
         $this->assertResponseStatusCodeSame(200);
 
-        self::assertEquals($planningData['name'], $plannings[0]['name']);
+        $planning = json_decode($this->client->getResponse()->getContent(), true);
+
+        self::assertEquals($planningData['name'], $planning['name']);
     }
 
     public function testGetAllCreatedPlanningIsSuccessful()
     {
         $createdPlannings = [];
         for ($i = 0; $i < 2; ++$i) {
-            $this->authenticatedClient->request(
-                'POST',
-                $this->urlGenerator->generate(
-                    'planning_create'
-                ),
-                $this->randomPlanningData()
-            );
-            $this->assertResponseStatusCodeSame(200);
-            $createdPlannings[] = json_decode($this->client->getResponse()->getContent(), true)[0];
+            $createdPlannings[] = $this->testCreatePlanningIsSuccessful();
         }
 
         $this->authenticatedClient->request(
@@ -112,7 +99,9 @@ class PlanningTest extends AbstractAuthenticatedTest
                 'planning_list'
             )
         );
+
         $this->assertResponseStatusCodeSame(200);
+
         $allPlannings = json_decode($this->client->getResponse()->getContent(), true);
 
         foreach ($createdPlannings as $planning) {
@@ -134,63 +123,44 @@ class PlanningTest extends AbstractAuthenticatedTest
 
     public function testGetOneCreatedPlanningFailUserIsNotConnected()
     {
-        $this->authenticatedClient->request(
-            'POST',
-            $this->urlGenerator->generate(
-                'planning_create'
-            ),
-            $this->randomPlanningData()
-        );
-        $this->assertResponseStatusCodeSame(200);
+        $planningData = $this->testCreatePlanningIsSuccessful();
 
-        $plannings = json_decode($this->client->getResponse()->getContent(), true);
         $this->client->request(
             'GET',
             $this->urlGenerator->generate(
                 'planning',
-                ['planningId' => $plannings[0]['id']]
+                ['planningId' => $planningData['id']]
             )
         );
+
         $this->assertResponseStatusCodeSame(401);
     }
 
     public function testGetAllCreatedPlanningFailUserIsNotConnected()
     {
         for ($i = 0; $i < 2; ++$i) {
-            $this->authenticatedClient->request(
-                'POST',
-                $this->urlGenerator->generate(
-                    'planning_create'
-                ),
-                $this->randomPlanningData()
-            );
+            $this->testCreatePlanningIsSuccessful();
         }
+
         $this->client->request(
             'GET',
             $this->urlGenerator->generate(
                 'planning_list'
             )
         );
+
         $this->assertResponseStatusCodeSame(401);
     }
 
     public function testUpdatePlanningFailIfUserIsNotConnected()
     {
-        $this->authenticatedClient->request(
-            'POST',
-            $this->urlGenerator->generate(
-                'planning_create'
-            ),
-            $this->randomPlanningData()
-        );
-        $this->assertResponseStatusCodeSame(200);
+        $planningData = $this->testCreatePlanningIsSuccessful();
 
-        $plannings = json_decode($this->client->getResponse()->getContent(), true);
         $this->client->request(
             'PATCH',
             $this->urlGenerator->generate(
                 'planning_update',
-                ['planningId' => $plannings[0]['id']]
+                ['planningId' => $planningData['id']]
             ),
             $this->randomPlanningData()
         );
@@ -200,30 +170,23 @@ class PlanningTest extends AbstractAuthenticatedTest
 
     public function testUpdateOnePlanning()
     {
-        $this->authenticatedClient->request(
-            'POST',
-            $this->urlGenerator->generate(
-                'planning_create'
-            ),
-            $this->randomPlanningData()
-        );
-        $this->assertResponseStatusCodeSame(200);
-
-        $planningName = self::$faker->words(3, true);
-        $plannings = json_decode($this->client->getResponse()->getContent(), true);
+        $planningData = $this->testCreatePlanningIsSuccessful();
+        $randomPlanningData = $this->randomPlanningData();
 
         $this->authenticatedClient->request(
             'PATCH',
             $this->urlGenerator->generate(
                 'planning_update',
-                ['planningId' => $plannings[0]['id']]
+                ['planningId' => $planningData['id']]
             ),
-            ['name' => $planningName]
+            $randomPlanningData
         );
         $this->assertResponseStatusCodeSame(200);
 
-        $plannings = \Safe\json_decode($this->client->getResponse()->getContent(), true);
-        self::assertEquals($planningName, $plannings[0]['name']);
+        $updatedPlanningData = json_decode($this->client->getResponse()->getContent(), true);
+        $randomPlanningData['id'] = $updatedPlanningData['id'];
+
+        self::assertEquals($randomPlanningData, $updatedPlanningData);
     }
 
     public function testUpdatePlanningDoesNotExist()
@@ -242,32 +205,26 @@ class PlanningTest extends AbstractAuthenticatedTest
 
     public function testDeleteOnePlanning()
     {
-        $this->authenticatedClient->request(
-            'POST',
-            $this->urlGenerator->generate(
-                'planning_create'
-            ),
-            $this->randomPlanningData()
-        );
-        $this->assertResponseStatusCodeSame(200);
+        $planning = $this->testCreatePlanningIsSuccessful();
 
-        $plannings = json_decode($this->client->getResponse()->getContent(), true);
         $this->authenticatedClient->request(
             'DELETE',
             $this->urlGenerator->generate(
                 'planning_delete',
-                ['planningId' => $plannings[0]['id']]
+                ['planningId' => $planning['id']]
             )
         );
+
         $this->assertResponseStatusCodeSame(200);
 
         $this->authenticatedClient->request(
             'GET',
             $this->urlGenerator->generate(
                 'planning',
-                ['planningId' => $plannings[0]['id']]
+                ['planningId' => $planning['id']]
             )
         );
+
         $this->assertResponseStatusCodeSame(404);
     }
 
@@ -286,23 +243,16 @@ class PlanningTest extends AbstractAuthenticatedTest
 
     public function testDeleteOnePlanningFailIfUserIsNotConnected()
     {
-        $this->authenticatedClient->request(
-            'POST',
-            $this->urlGenerator->generate(
-                'planning_create'
-            ),
-            $this->randomPlanningData()
-        );
-        $this->assertResponseStatusCodeSame(200);
+        $planning = $this->testCreatePlanningIsSuccessful();
 
-        $plannings = json_decode($this->client->getResponse()->getContent(), true);
         $this->client->request(
             'DELETE',
             $this->urlGenerator->generate(
                 'planning_delete',
-                ['planningId' => $plannings[0]['id']]
+                ['planningId' => $planning['id']]
             )
         );
+
         $this->assertResponseStatusCodeSame(401);
     }
 }

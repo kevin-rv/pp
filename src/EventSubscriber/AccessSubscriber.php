@@ -32,7 +32,7 @@ class AccessSubscriber implements EventSubscriberInterface
         $this->userRepository = $userRepository;
     }
 
-    public function onKernelRequest(RequestEvent $event)
+    public function onKernelRequest(RequestEvent $event): void
     {
         if (!$this->isAuthRequired($event)) {
             return;
@@ -48,7 +48,10 @@ class AccessSubscriber implements EventSubscriberInterface
         $event->getRequest()->attributes->set('_user', $user);
     }
 
-    public static function getSubscribedEvents()
+    /**
+     * @return string[]
+     */
+    public static function getSubscribedEvents(): array
     {
         return [
             'kernel.request' => 'onKernelRequest',

@@ -21,14 +21,14 @@ class TaskFixtures extends Fixture implements DependentFixtureInterface
         $this->faker = Factory::create('fr_FR');
     }
 
-    public function load(ObjectManager $manager)
+    public function load(ObjectManager $manager): void
     { // 10 tache par planning
         for ($i = $j = 0; $i < 1000; ++$i) {
             $task = new Task();
             $task->setShortDescription($this->faker->text(45));
             $task->setDone($this->faker->dateTime);
             $task->setDoneLimitDate($this->faker->dateTime);
-            $task->setPlanning($this->getReference('planning_'.$j));
+            $task->setPlanning($this->getReference('planning_'.$j++));
             if (100 === $j) {
                 $j = 0;
             }
