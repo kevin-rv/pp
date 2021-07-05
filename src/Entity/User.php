@@ -124,7 +124,7 @@ class User
 
     public function isPasswordValid(string $password): bool
     {
-        return password_verify('password', $this->password);
+        return password_verify($password, $this->password);
     }
 
     public function getBirthday(): ?\DateTimeInterface

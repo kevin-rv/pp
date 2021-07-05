@@ -136,7 +136,7 @@ class EventController extends BaseController
             $events,
             null,
             [
-                AbstractNormalizer::IGNORED_ATTRIBUTES => ['planning'],
+                AbstractNormalizer::IGNORED_ATTRIBUTES => ['planning', 'user', 'events'],
                 AbstractNormalizer::CALLBACKS => [
                     'startDatetime' => Callbacks::DATETIME_ATOMIC,
                     'endDatetime' => Callbacks::DATETIME_ATOMIC,

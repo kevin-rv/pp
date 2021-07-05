@@ -104,11 +104,19 @@ class Task
             if (!in_array($key, self::FIELDS_MAP)) {
                 continue;
             }
+            if ($value === '') {
+                $value = null;
+            }
             if (in_array($key, ['done', 'doneLimitDate'])) {
-                if (!preg_match('#^\d{4}-\d{2}-\d{2}$#', $value)) {
+                if (
+                    $value !== null
+                    && !preg_match('#^\d{4}-\d{2}-\d{2}$#', $value)
+                ) {
                     throw new UnexpectedDataException(sprintf('%s MUST to be in format yyyy-mm-dd', $key));
                 }
-                $value = new DateTime($value);
+                if ($value !== null) {
+                    $value = new DateTime($value);
+                }
             }
             $this->{'set'.ucfirst($key)}($value);
         }
