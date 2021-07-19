@@ -138,7 +138,7 @@ class Event
                 if (!preg_match('#^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}[+-]\d{2}:\d{2}$#', $value)) {
                     throw new UnexpectedDataException(sprintf('%s MUST to be in format YYYY-MM-DDThh:mm:ss[+/-]hh:mm', $key));
                 }
-                $value = new DateTime($value);
+                $value = (new DateTime($value))->setTimezone(new \DateTimeZone('UTC'));
             }
             $this->{'set'.ucfirst($key)}($value);
         }

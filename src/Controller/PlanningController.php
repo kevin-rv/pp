@@ -94,6 +94,16 @@ class PlanningController extends BaseController
         }
 
         $planning->update($request->request->all());
+
+        $searchedPlanning = $this->planningRepository->findOneBy([
+            'name' => $planning->getName(),
+            'user' => $planning->getUser(),
+        ]);
+
+        if ($searchedPlanning) {
+            return $this->json(['error' => 'name already exist'], 409);
+        }
+
         $this->entityManager->persist($planning);
         $this->entityManager->flush();
 

@@ -40,7 +40,6 @@ class EventFixtures extends Fixture implements DependentFixtureInterface
                 $k = 0;
             }
 
-            // table intermédiaire ?
             $manager->persist($events);
         }
         $manager->flush();
