@@ -3,13 +3,12 @@
 namespace App\DataFixtures;
 
 use App\Entity\Contact;
-use Doctrine\Bundle\FixturesBundle\Fixture;
 use Doctrine\Common\DataFixtures\DependentFixtureInterface;
 use Doctrine\Persistence\ObjectManager;
 use Faker\Factory;
 use Faker\Generator;
 
-class ContactFixtures extends Fixture implements DependentFixtureInterface
+class ContactFixtures extends AbstractSuperFixture implements DependentFixtureInterface
 {
     /**
      * @var Generator
@@ -22,7 +21,7 @@ class ContactFixtures extends Fixture implements DependentFixtureInterface
     }
 
     public function load(ObjectManager $manager): void
-    { //10 contact par utilisateur
+    {
         for ($i = $j = 0; $i < 500; ++$i) {
             $contact = new Contact();
             $contact->setName($this->faker->word);

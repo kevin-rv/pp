@@ -3,13 +3,12 @@
 namespace App\DataFixtures;
 
 use App\Entity\Task;
-use Doctrine\Bundle\FixturesBundle\Fixture;
 use Doctrine\Common\DataFixtures\DependentFixtureInterface;
 use Doctrine\Persistence\ObjectManager;
 use Faker\Factory;
 use Faker\Generator;
 
-class TaskFixtures extends Fixture implements DependentFixtureInterface
+class TaskFixtures extends AbstractSuperFixture implements DependentFixtureInterface
 {
     /**
      * @var Generator
@@ -22,7 +21,7 @@ class TaskFixtures extends Fixture implements DependentFixtureInterface
     }
 
     public function load(ObjectManager $manager): void
-    { // 10 tache par planning
+    {
         for ($i = $j = 0; $i < 1000; ++$i) {
             $task = new Task();
             $task->setShortDescription($this->faker->text(45));

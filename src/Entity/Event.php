@@ -53,7 +53,7 @@ class Event
     private $planning;
 
     /**
-     * @ORM\ManyToMany(targetEntity=Contact::class, mappedBy="events")
+     * @ORM\ManyToMany(targetEntity=Contact::class, mappedBy="events", cascade={"persist", "remove"})
      */
     private $contacts;
 
@@ -134,7 +134,6 @@ class Event
                 continue;
             }
             if (in_array($key, ['startDatetime', 'endDatetime'])) {
-                // 2021-06-08T06:45:50+00:00
                 if (!preg_match('#^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}[+-]\d{2}:\d{2}$#', $value)) {
                     throw new UnexpectedDataException(sprintf('%s MUST to be in format YYYY-MM-DDThh:mm:ss[+/-]hh:mm', $key));
                 }

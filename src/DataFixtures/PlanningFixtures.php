@@ -3,13 +3,12 @@
 namespace App\DataFixtures;
 
 use App\Entity\Planning;
-use Doctrine\Bundle\FixturesBundle\Fixture;
 use Doctrine\Common\DataFixtures\DependentFixtureInterface;
 use Doctrine\Persistence\ObjectManager;
 use Faker\Factory;
 use Faker\Generator;
 
-class PlanningFixtures extends Fixture implements DependentFixtureInterface
+class PlanningFixtures extends AbstractSuperFixture implements DependentFixtureInterface
 {
     /**
      * @var Generator

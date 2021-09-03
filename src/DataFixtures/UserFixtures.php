@@ -3,12 +3,11 @@
 namespace App\DataFixtures;
 
 use App\Entity\User;
-use Doctrine\Bundle\FixturesBundle\Fixture;
 use Doctrine\Persistence\ObjectManager;
 use Faker\Factory;
 use Faker\Generator;
 
-class UserFixtures extends Fixture
+class UserFixtures extends AbstractSuperFixture
 {
     /**
      * @var Generator

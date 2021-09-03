@@ -30,7 +30,7 @@ class CorsSubscriber implements EventSubscriberInterface
         $response = $event->getResponse();
         $response->headers->set('Access-Control-Allow-Origin', '*');
         $response->headers->set('Vary', 'Origin');
-        $response->headers->set('Access-Control-Allow-Headers', 'Content-Type, *');
+        $response->headers->set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
         $response->headers->set('Access-Control-Allow-Credentials', 'true');
         $response->headers->set('Access-Control-Expose-Headers', '*');
         $response->headers->set('Cache-Control ', 'no-cache');

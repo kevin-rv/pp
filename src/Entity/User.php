@@ -79,7 +79,7 @@ class User
     private $contacts;
 
     /**
-     * @ORM\OneToMany(targetEntity=Planning::class, mappedBy="user")
+     * @ORM\OneToMany(targetEntity=Planning::class, mappedBy="user", cascade={"remove", "persist"})
      */
     private $plannings;
 
@@ -259,6 +259,10 @@ class User
      */
     public function update(array $payload): self
     {
+        if (isset($payload['password']) && $payload['password'] !== $payload['confirmPassword']) {
+            throw new UnexpectedDataException('Password and Confirm password does not match');
+        }
+        unset($payload['confirmPassword']);
         foreach ($payload as $key => $value) {
             if (!in_array($key, self::FIELDS_MAP)) {
                 continue;

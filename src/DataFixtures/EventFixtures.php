@@ -2,14 +2,14 @@
 
 namespace App\DataFixtures;
 
+use App\Entity\Contact;
 use App\Entity\Event;
-use Doctrine\Bundle\FixturesBundle\Fixture;
 use Doctrine\Common\DataFixtures\DependentFixtureInterface;
 use Doctrine\Persistence\ObjectManager;
 use Faker\Factory;
 use Faker\Generator;
 
-class EventFixtures extends Fixture implements DependentFixtureInterface
+class EventFixtures extends AbstractSuperFixture implements DependentFixtureInterface
 {
     /**
      * @var Generator
