@@ -141,7 +141,7 @@ class Contact
         return $this;
     }
 
-    public function getEmail(): ?string
+    public function getEmail(): ?string  // TODO Bad-email or null ?
     {
         return $this->email;
     }
