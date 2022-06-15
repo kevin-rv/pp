@@ -1,14 +1,14 @@
 <?php
 
 namespace App\DataFixtures;
+
 use App\Entity\Contact;
-use Doctrine\Bundle\FixturesBundle\Fixture;
 use Doctrine\Common\DataFixtures\DependentFixtureInterface;
 use Doctrine\Persistence\ObjectManager;
 use Faker\Factory;
 use Faker\Generator;
 
-class ContactFixtures extends Fixture implements DependentFixtureInterface
+class ContactFixtures extends AbstractSuperFixture implements DependentFixtureInterface
 {
     /**
      * @var Generator
@@ -19,9 +19,10 @@ class ContactFixtures extends Fixture implements DependentFixtureInterface
     {
         $this->faker = Factory::create('fr_FR');
     }
-    public function load(ObjectManager $manager)
-    { //10 contact par utilisateur
-        for ($i = $j = 0; $i < 500; $i++) {
+
+    public function load(ObjectManager $manager): void
+    {
+        for ($i = $j = 0; $i < 500; ++$i) {
             $contact = new Contact();
             $contact->setName($this->faker->word);
             $contact->setPhoneNumber($this->faker->phoneNumber);
@@ -31,8 +32,8 @@ class ContactFixtures extends Fixture implements DependentFixtureInterface
             $contact->setRelationship($this->faker->word);
             $contact->setWork($this->faker->jobTitle);
             $contact->setUser($this->getReference('user_'.$j));
-            $j++;
-            if ($j === 50) {
+            ++$j;
+            if (50 === $j) {
                 $j = 0;
             }
 

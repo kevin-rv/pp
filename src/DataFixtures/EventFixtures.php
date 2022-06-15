@@ -1,14 +1,15 @@
 <?php
 
 namespace App\DataFixtures;
+
+use App\Entity\Contact;
 use App\Entity\Event;
-use Doctrine\Bundle\FixturesBundle\Fixture;
 use Doctrine\Common\DataFixtures\DependentFixtureInterface;
 use Doctrine\Persistence\ObjectManager;
 use Faker\Factory;
 use Faker\Generator;
 
-class EventFixtures extends Fixture implements  DependentFixtureInterface
+class EventFixtures extends AbstractSuperFixture implements DependentFixtureInterface
 {
     /**
      * @var Generator
@@ -20,27 +21,26 @@ class EventFixtures extends Fixture implements  DependentFixtureInterface
         $this->faker = Factory::create('fr_FR');
     }
 
-    public function load(ObjectManager $manager)
+    public function load(ObjectManager $manager): void
     {
-        for ($i = $j = $k = 0; $i < 1000; $i++) {
-            $event = new Event();
-            $event->setShortDescription($this->faker->text(45));
-            $event->setFullDescription($this->faker->realText());
-            $event->setStartDatetime($this->faker->dateTime);
-            $event->setEndDatetime($this->faker->dateTime);
-            $event->setPlanning($this->getReference('planning_'.$j));
-            $event->addContact($this->getReference('contact_'.$k));
-            $j++;
-            if ($j === 100) {
+        for ($i = $j = $k = 0; $i < 1000; ++$i) {
+            $events = new Event();
+            $events->setShortDescription($this->faker->text(45));
+            $events->setFullDescription($this->faker->realText());
+            $events->setStartDatetime($this->faker->dateTime);
+            $events->setEndDatetime($this->faker->dateTime);
+            $events->setPlanning($this->getReference('planning_'.$j));
+            $events->addContact($this->getReference('contact_'.$k));
+            ++$j;
+            if (100 === $j) {
                 $j = 0;
             }
-            $k++;
-            if ($k === 500) {
+            ++$k;
+            if (500 === $k) {
                 $k = 0;
             }
 
- // table intermédiaire ?
-            $manager->persist($event);
+            $manager->persist($events);
         }
         $manager->flush();
     }
@@ -52,4 +52,4 @@ class EventFixtures extends Fixture implements  DependentFixtureInterface
             ContactFixtures::class,
         ];
     }
-} // TODO implémenter planning et contact
+}

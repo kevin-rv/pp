@@ -2,7 +2,9 @@
 
 namespace App\Entity;
 
+use App\Error\UnexpectedDataException;
 use App\Repository\TaskRepository;
+use DateTime;
 use Doctrine\ORM\Mapping as ORM;
 
 /**
@@ -10,6 +12,12 @@ use Doctrine\ORM\Mapping as ORM;
  */
 class Task
 {
+    public const FIELDS_MAP = [
+        'shortDescription',
+        'done',
+        'doneLimitDate',
+    ];
+
     /**
      * @ORM\Id
      * @ORM\GeneratedValue
@@ -86,6 +94,32 @@ class Task
     public function setPlanning(?Planning $planning): self
     {
         $this->planning = $planning;
+
+        return $this;
+    }
+
+    public function update(array $payload): self
+    {
+        foreach ($payload as $key => $value) {
+            if (!in_array($key, self::FIELDS_MAP)) {
+                continue;
+            }
+            if ($value === '') {
+                $value = null;
+            }
+            if (in_array($key, ['done', 'doneLimitDate'])) {
+                if (
+                    $value !== null
+                    && !preg_match('#^\d{4}-\d{2}-\d{2}$#', $value)
+                ) {
+                    throw new UnexpectedDataException(sprintf('%s MUST to be in format yyyy-mm-dd', $key));
+                }
+                if ($value !== null) {
+                    $value = new DateTime($value);
+                }
+            }
+            $this->{'set'.ucfirst($key)}($value);
+        }
 
         return $this;
     }

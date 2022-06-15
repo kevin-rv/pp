@@ -3,13 +3,12 @@
 namespace App\DataFixtures;
 
 use App\Entity\Planning;
-use Doctrine\Bundle\FixturesBundle\Fixture;
 use Doctrine\Common\DataFixtures\DependentFixtureInterface;
 use Doctrine\Persistence\ObjectManager;
 use Faker\Factory;
 use Faker\Generator;
 
-class PlanningFixtures extends Fixture implements DependentFixtureInterface
+class PlanningFixtures extends AbstractSuperFixture implements DependentFixtureInterface
 {
     /**
      * @var Generator
@@ -21,14 +20,14 @@ class PlanningFixtures extends Fixture implements DependentFixtureInterface
         $this->faker = Factory::create('fr_FR');
     }
 
-    public function load(ObjectManager $manager)
+    public function load(ObjectManager $manager): void
     {
-        for ($i = $j = 0; $i < 100; $i++) {
+        for ($i = $j = 0; $i < 100; ++$i) {
             $planning = new Planning();
             $planning->setName($this->faker->word);
             $planning->setUser($this->getReference('user_'.$j));
-            $j++;
-            if ($j === 50) {
+            ++$j;
+            if (50 === $j) {
                 $j = 0;
             }
 

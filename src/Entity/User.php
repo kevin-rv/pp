@@ -2,10 +2,13 @@
 
 namespace App\Entity;
 
+use App\Error\UnexpectedDataException;
 use App\Repository\UserRepository;
+use DateTime;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use Exception;
 
 /**
  * @ORM\Entity(repositoryClass=UserRepository::class)
@@ -13,6 +16,21 @@ use Doctrine\ORM\Mapping as ORM;
  */
 class User
 {
+    public const BIRTHDAY_REGEX = /* @lang RegExp */ '#^\d{4}-\d{2}-\d{2}$#';
+    public const BIRTHDAY_ERROR_MSG = 'birthday MUST to be in format yyyy-mm-dd';
+    public const PHONE_NUMBER_REGEX = /* @lang RegExp */ '#^(\+\d{1,4}\s*)?(\(\d{1,5}\))?(\s*\d{1,2}){1,6}$#';
+    public const PHONE_NUMBER_ERROR_MSG = 'phone number MUST match regex format: '.self::PHONE_NUMBER_REGEX;
+    public const EMAIL_ERROR_MSG = 'email MUST to be a valid email';
+    public const FIELDS_MAP = [
+        'email',
+        'password',
+        'birthday',
+        'home',
+        'work',
+        'phoneNumber',
+        'name',
+    ];
+
     /**
      * @ORM\Id
      * @ORM\GeneratedValue
@@ -21,7 +39,7 @@ class User
     private $id;
 
     /**
-     * @ORM\Column(type="string", length=320)
+     * @ORM\Column(type="string", length=320, unique=true)
      */
     private $email;
 
@@ -51,24 +69,24 @@ class User
     private $work;
 
     /**
-     * @ORM\OneToMany(targetEntity=planning::class, mappedBy="user", cascade={"remove", "persist"})
-     */
-    private $planning;
-
-    /**
      * @ORM\Column(type="string", length=255)
      */
     private $name;
 
     /**
-     * @ORM\OneToMany(targetEntity=contact::class, mappedBy="user")
+     * @ORM\OneToMany(targetEntity=Contact::class, mappedBy="user", cascade={"remove", "persist"})
      */
-    private $contact;
+    private $contacts;
+
+    /**
+     * @ORM\OneToMany(targetEntity=Planning::class, mappedBy="user", cascade={"remove", "persist"})
+     */
+    private $plannings;
 
     public function __construct()
     {
-        $this->planning = new ArrayCollection();
-        $this->contact = new ArrayCollection();
+        $this->plannings = new ArrayCollection();
+        $this->contacts = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -83,6 +101,10 @@ class User
 
     public function setEmail(string $email): self
     {
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            throw new UnexpectedDataException(self::EMAIL_ERROR_MSG);
+        }
+
         $this->email = $email;
 
         return $this;
@@ -95,9 +117,14 @@ class User
 
     public function setPassword(string $password): self
     {
-        $this->password = $password;
+        $this->password = password_hash('password', PASSWORD_DEFAULT);
 
         return $this;
+    }
+
+    public function isPasswordValid(string $password): bool
+    {
+        return password_verify($password, $this->password);
     }
 
     public function getBirthday(): ?\DateTimeInterface
@@ -119,6 +146,10 @@ class User
 
     public function setPhoneNumber(?string $phoneNumber): self
     {
+        if (!preg_match(self::PHONE_NUMBER_REGEX, $phoneNumber)) {
+            throw new UnexpectedDataException(self::PHONE_NUMBER_ERROR_MSG);
+        }
+
         $this->phoneNumber = $phoneNumber;
 
         return $this;
@@ -148,27 +179,72 @@ class User
         return $this;
     }
 
-    /**
-     * @return Collection|planning[]
-     */
-    public function getPlanning(): Collection
+    public function getName(): ?string
     {
-        return $this->planning;
+        return $this->name;
     }
 
-    public function addPlanning(planning $planning): self
+    public function setName(string $name): self
     {
-        if (!$this->planning->contains($planning)) {
-            $this->planning[] = $planning;
+        if ('' === $name) {
+            throw new UnexpectedDataException('name MUST NOT be empty');
+        }
+        $this->name = $name;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection|Contact[]
+     */
+    public function getContacts(): Collection
+    {
+        return $this->contacts;
+    }
+
+    public function addContact(Contact $contact): self
+    {
+        if (!$this->contacts->contains($contact)) {
+            $this->contacts[] = $contact;
+            $contact->setUser($this);
+        }
+
+        return $this;
+    }
+
+    public function removeContact(Contact $contact): self
+    {
+        if ($this->contacts->removeElement($contact)) {
+            // set the owning side to null (unless already changed)
+            if ($contact->getUser() === $this) {
+                $contact->setUser(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection|Planning[]
+     */
+    public function getPlannings(): Collection
+    {
+        return $this->plannings;
+    }
+
+    public function addPlanning(Planning $planning): self
+    {
+        if (!$this->plannings->contains($planning)) {
+            $this->plannings[] = $planning;
             $planning->setUser($this);
         }
 
         return $this;
     }
 
-    public function removePlanning(planning $planning): self
+    public function removePlanning(Planning $planning): self
     {
-        if ($this->planning->removeElement($planning)) {
+        if ($this->plannings->removeElement($planning)) {
             // set the owning side to null (unless already changed)
             if ($planning->getUser() === $this) {
                 $planning->setUser(null);
@@ -178,43 +254,26 @@ class User
         return $this;
     }
 
-    public function getName(): ?string
-    {
-        return $this->name;
-    }
-
-    public function setName(string $name): self
-    {
-        $this->name = $name;
-
-        return $this;
-    }
-
     /**
-     * @return Collection|contact[]
+     * @throws Exception
      */
-    public function getContact(): Collection
+    public function update(array $payload): self
     {
-        return $this->contact;
-    }
-
-    public function addContact(contact $contact): self
-    {
-        if (!$this->contact->contains($contact)) {
-            $this->contact[] = $contact;
-            $contact->setUser($this);
+        if (isset($payload['password']) && $payload['password'] !== $payload['confirmPassword']) {
+            throw new UnexpectedDataException('Password and Confirm password does not match');
         }
-
-        return $this;
-    }
-
-    public function removeContact(contact $contact): self
-    {
-        if ($this->contact->removeElement($contact)) {
-            // set the owning side to null (unless already changed)
-            if ($contact->getUser() === $this) {
-                $contact->setUser(null);
+        unset($payload['confirmPassword']);
+        foreach ($payload as $key => $value) {
+            if (!in_array($key, self::FIELDS_MAP)) {
+                continue;
             }
+            if ('birthday' === $key) {
+                if (!preg_match(self::BIRTHDAY_REGEX, $value)) {
+                    throw new UnexpectedDataException(self::BIRTHDAY_ERROR_MSG);
+                }
+                $value = new DateTime($value);
+            }
+            $this->{'set'.ucfirst($key)}($value);
         }
 
         return $this;

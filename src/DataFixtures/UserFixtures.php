@@ -3,12 +3,11 @@
 namespace App\DataFixtures;
 
 use App\Entity\User;
-use Doctrine\Bundle\FixturesBundle\Fixture;
 use Doctrine\Persistence\ObjectManager;
 use Faker\Factory;
 use Faker\Generator;
 
-class UserFixtures extends Fixture
+class UserFixtures extends AbstractSuperFixture
 {
     /**
      * @var Generator
@@ -20,17 +19,16 @@ class UserFixtures extends Fixture
         $this->faker = Factory::create('fr_FR');
     }
 
-    public function load(ObjectManager $manager)
+    public function load(ObjectManager $manager): void
     {
-        for ($i = 0; $i < 50; $i++) {
+        for ($i = 0; $i < 50; ++$i) {
             $user = new User();
             $user->setName($this->faker->word);
             $user->setBirthday($this->faker->dateTime('-18 years'));
             $user->setEmail('email_'.$i.'@email.com');
             $user->setHome($this->faker->address);
             $user->setPhoneNumber($this->faker->phoneNumber);
-            $user->setPassword(password_hash('password', PASSWORD_DEFAULT));
-            password_verify('password', '$2y$10$wVQBs4hnQJPWaIqQKUJpqulTADRaTjBy6aeY9CpyL4J8eAIBAmhkW');
+            $user->setPassword('password');
             $user->setWork($this->faker->jobTitle);
 
             $this->setReference('user_'.$i, $user);

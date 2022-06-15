@@ -2,6 +2,7 @@
 
 namespace App\Entity;
 
+use App\Error\UnexpectedDataException;
 use App\Repository\PlanningRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -12,6 +13,10 @@ use Doctrine\ORM\Mapping as ORM;
  */
 class Planning
 {
+    public const FIELDS_MAP = [
+        'name',
+    ];
+
     /**
      * @ORM\Id
      * @ORM\GeneratedValue
@@ -25,26 +30,25 @@ class Planning
     private $name;
 
     /**
-     * @ORM\OneToMany(targetEntity=event::class, mappedBy="planning")
+     * @ORM\OneToMany(targetEntity=Event::class, mappedBy="planning", cascade={"remove", "persist"})
      */
-    private $event;
+    private $events;
 
     /**
-     * @ORM\OneToMany(targetEntity=Task::class, mappedBy="planning")
+     * @ORM\OneToMany(targetEntity=Task::class, mappedBy="planning", cascade={"remove", "persist"})
      */
-    private $task;
+    private $tasks;
 
     /**
-     * @ORM\ManyToOne(targetEntity=User::class, inversedBy="planning", cascade={"remove", "persist"})
+     * @ORM\ManyToOne(targetEntity=User::class, inversedBy="plannings")
      * @ORM\JoinColumn(nullable=false)
      */
     private $user;
 
     public function __construct()
     {
-        $this->event = new ArrayCollection();
-        $this->task = new ArrayCollection();
-        $this->contact = new ArrayCollection();
+        $this->events = new ArrayCollection();
+        $this->tasks = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -59,32 +63,35 @@ class Planning
 
     public function setName(string $name): self
     {
+        if ('' === $name) {
+            throw new UnexpectedDataException('name MUST NOT be empty');
+        }
         $this->name = $name;
 
         return $this;
     }
 
     /**
-     * @return Collection|event[]
+     * @return Collection|Event[]
      */
-    public function getEvent(): Collection
+    public function getEvents(): Collection
     {
-        return $this->event;
+        return $this->events;
     }
 
-    public function addEvent(event $event): self
+    public function addEvent(Event $event): self
     {
-        if (!$this->event->contains($event)) {
-            $this->event[] = $event;
+        if (!$this->events->contains($event)) {
+            $this->events[] = $event;
             $event->setPlanning($this);
         }
 
         return $this;
     }
 
-    public function removeEvent(event $event): self
+    public function removeEvent(Event $event): self
     {
-        if ($this->event->removeElement($event)) {
+        if ($this->events->removeElement($event)) {
             // set the owning side to null (unless already changed)
             if ($event->getPlanning() === $this) {
                 $event->setPlanning(null);
@@ -97,15 +104,15 @@ class Planning
     /**
      * @return Collection|Task[]
      */
-    public function getTask(): Collection
+    public function getTasks(): Collection
     {
-        return $this->task;
+        return $this->tasks;
     }
 
     public function addTask(Task $task): self
     {
-        if (!$this->task->contains($task)) {
-            $this->task[] = $task;
+        if (!$this->tasks->contains($task)) {
+            $this->tasks[] = $task;
             $task->setPlanning($this);
         }
 
@@ -114,7 +121,7 @@ class Planning
 
     public function removeTask(Task $task): self
     {
-        if ($this->task->removeElement($task)) {
+        if ($this->tasks->removeElement($task)) {
             // set the owning side to null (unless already changed)
             if ($task->getPlanning() === $this) {
                 $task->setPlanning(null);
@@ -124,31 +131,13 @@ class Planning
         return $this;
     }
 
-    /**
-     * @return Collection|Contact[]
-     */
-    public function getContact(): Collection
+    public function update(array $payload): self
     {
-        return $this->contact;
-    }
-
-    public function addContact(Contact $contact): self
-    {
-        if (!$this->contact->contains($contact)) {
-            $this->contact[] = $contact;
-            $contact->setPlanning($this);
-        }
-
-        return $this;
-    }
-
-    public function removeContact(Contact $contact): self
-    {
-        if ($this->contact->removeElement($contact)) {
-            // set the owning side to null (unless already changed)
-            if ($contact->getPlanning() === $this) {
-                $contact->setPlanning(null);
+        foreach ($payload as $key => $value) {
+            if (!in_array($key, self::FIELDS_MAP)) {
+                continue;
             }
+            $this->{'set'.ucfirst($key)}($value);
         }
 
         return $this;
@@ -159,7 +148,7 @@ class Planning
         return $this->user;
     }
 
-    public function setUser(User $user): self
+    public function setUser(?User $user): self
     {
         $this->user = $user;
 

@@ -3,7 +3,9 @@
 namespace App\Repository;
 
 use App\Entity\Event;
+use App\Entity\Planning;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Doctrine\ORM\Query\Expr\Join;
 use Doctrine\Persistence\ManagerRegistry;
 
 /**
@@ -17,6 +19,45 @@ class EventRepository extends ServiceEntityRepository
     public function __construct(ManagerRegistry $registry)
     {
         parent::__construct($registry, Event::class);
+    }
+
+    /**
+     * @return Event|null Returns an Event object
+     */
+    public function findOneEventByUserPlanning(int $userId, int $planningId, int $eventId)
+    {
+        $qb = $this->createQueryBuilder('e');
+
+        $qb
+            ->select('e')
+            ->innerJoin(Planning::class, 'p', Join::WITH, 'e.planning = p.id')
+            ->where($qb->expr()->eq('p.user', $userId))
+            ->andwhere($qb->expr()->eq('p.id', $planningId))
+            ->andwhere($qb->expr()->eq('e.id', $eventId))
+        ;
+
+        $query = $qb->getQuery();
+
+        return $query->getOneOrNullResult();
+    }
+
+    /**
+     * @return Event[] Returns an array of Event objects
+     */
+    public function findAllEventByUserPlanning(int $userId, int $planningId)
+    {
+        $qb = $this->createQueryBuilder('e');
+
+        $qb
+            ->select('e')
+            ->innerJoin(Planning::class, 'p', Join::WITH, 'e.planning = p.id')
+            ->where($qb->expr()->eq('p.user', $userId))
+            ->andwhere($qb->expr()->eq('p.id', $planningId))
+        ;
+
+        $query = $qb->getQuery();
+
+        return $query->getResult();
     }
 
     // /**

@@ -3,7 +3,9 @@
 namespace App\Repository;
 
 use App\Entity\Contact;
+use App\Entity\User;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Doctrine\ORM\Query\Expr\Join;
 use Doctrine\Persistence\ManagerRegistry;
 
 /**
@@ -17,6 +19,43 @@ class ContactRepository extends ServiceEntityRepository
     public function __construct(ManagerRegistry $registry)
     {
         parent::__construct($registry, Contact::class);
+    }
+
+    /**
+     * @return Contact|null Returns an Contact object
+     */
+    public function findOneContactByUser(int $userId, int $contactId)
+    {
+        $qb = $this->createQueryBuilder('c');
+
+        $qb
+            ->select('c')
+            ->innerJoin(User::class, 'u', Join::WITH, 'c.user = u.id')
+            ->where($qb->expr()->eq('u.id', $userId))
+            ->andwhere($qb->expr()->eq('c.id', $contactId))
+        ;
+
+        $query = $qb->getQuery();
+
+        return $query->getOneOrNullResult();
+    }
+
+    /**
+     * @return Contact[] Returns an array of Contact objects
+     */
+    public function findAllContactByUser(int $userId)
+    {
+        $qb = $this->createQueryBuilder('c');
+
+        $qb
+            ->select('c')
+            ->innerJoin(User::class, 'u', Join::WITH, 'c.user = u.id')
+            ->where($qb->expr()->eq('u.id', $userId))
+        ;
+
+        $query = $qb->getQuery();
+
+        return $query->getResult();
     }
 
     // /**
