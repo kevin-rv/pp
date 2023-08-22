@@ -72,7 +72,7 @@ class Contact
     private $events;
 
     /**
-     * @ORM\ManyToOne(targetEntity=User::class, inversedBy="contact", cascade={"remove", "persist"})
+     * @ORM\ManyToOne(targetEntity=User::class, inversedBy="contact")
      */
     private $user;
 
